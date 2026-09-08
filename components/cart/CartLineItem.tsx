@@ -1,0 +1,89 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import type { CartLine } from "@/lib/cart-data";
+import { Icon } from "@/components/ui/Icon";
+
+export function CartLineItem({
+  item,
+  onQty,
+  onRemove,
+}: {
+  item: CartLine;
+  onQty: (id: string, quantity: number) => void;
+  onRemove: (id: string) => void;
+}) {
+  return (
+    <div className="flex items-start gap-3.5 xl:gap-4">
+      <Link
+        href={`/product/${item.id}`}
+        className="relative size-[99px] shrink-0 overflow-hidden rounded-[8.66px] bg-product xl:size-[124px] xl:rounded-[8.66px]"
+      >
+        <Image
+          src={item.image}
+          alt={item.name}
+          fill
+          className="object-cover"
+          sizes="124px"
+        />
+      </Link>
+
+      <div className="flex min-h-[99px] min-w-0 flex-1 flex-col justify-between xl:min-h-[124px]">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <Link
+              href={`/product/${item.id}`}
+              className="block truncate text-base font-bold leading-[22px] text-black xl:text-xl xl:leading-[27px]"
+            >
+              {item.name}
+            </Link>
+            <p className="mt-0.5 text-xs leading-[16px] xl:text-sm xl:leading-[19px]">
+              <span className="text-black">Size: </span>
+              <span className="text-text-60">{item.size}</span>
+            </p>
+            <p className="text-xs leading-[16px] xl:text-sm xl:leading-[19px]">
+              <span className="text-black">Color: </span>
+              <span className="text-text-60">{item.color}</span>
+            </p>
+          </div>
+
+          <button
+            type="button"
+            aria-label={`Remove ${item.name}`}
+            onClick={() => onRemove(item.id)}
+            className="shrink-0"
+          >
+            <Icon src="/icons/trash.svg" size={24} />
+          </button>
+        </div>
+
+        <div className="mt-3 flex items-end justify-between gap-3 xl:mt-0">
+          <span className="text-xl font-bold leading-none xl:text-2xl">
+            ${item.price}
+          </span>
+
+          <div className="flex h-8 w-[105px] items-center justify-between rounded-[62px] bg-muted px-4 xl:h-10 xl:w-[126px] xl:px-5">
+            <button
+              type="button"
+              aria-label="Decrease quantity"
+              onClick={() => onQty(item.id, Math.max(1, item.quantity - 1))}
+              className="text-xl leading-none"
+            >
+              −
+            </button>
+            <span className="text-sm font-medium">{item.quantity}</span>
+            <button
+              type="button"
+              aria-label="Increase quantity"
+              onClick={() => onQty(item.id, item.quantity + 1)}
+              className="text-xl leading-none"
+            >
+              +
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
