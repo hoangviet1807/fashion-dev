@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { ShopProduct } from "@/lib/shop-data";
-import type { ProductDetail } from "@/lib/product-data";
+import { discountPercent } from "@/lib/product";
+import type { Product, ProductSummary } from "@/lib/types/product";
 import { Container } from "@/components/layout/Container";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { ProductPurchase } from "@/components/product/ProductPurchase";
@@ -17,10 +17,16 @@ export function ProductDetailView({
   product,
   related,
 }: {
-  product: ProductDetail;
-  related: ShopProduct[];
+  product: Product;
+  related: ProductSummary[];
 }) {
   const [galleryIndex, setGalleryIndex] = useState(0);
+  const breadcrumb: { label: string; href?: string }[] = [
+    { label: "Trang chủ", href: "/" },
+    { label: "Cửa hàng", href: "/shop" },
+    { label: "Nam", href: "/shop?style=casual" },
+    { label: product.categoryTitle },
+  ];
 
   return (
     <div>
@@ -30,8 +36,8 @@ export function ProductDetailView({
           aria-label="Breadcrumb"
           className="flex flex-wrap items-center gap-1 pt-5 text-sm xl:pt-6 xl:text-base"
         >
-          {product.breadcrumb.map((crumb, index) => {
-            const last = index === product.breadcrumb.length - 1;
+          {breadcrumb.map((crumb, index) => {
+            const last = index === breadcrumb.length - 1;
             return (
               <span key={`${crumb.label}-${index}`} className="flex items-center gap-1">
                 {index > 0 ? (
@@ -62,7 +68,7 @@ export function ProductDetailView({
 
         <div className="flex flex-col gap-5 pt-6 pb-2 xl:flex-row xl:items-start xl:gap-10 xl:pt-9">
           <ProductGallery
-            images={product.gallery}
+            images={product.images}
             name={product.name}
             activeIndex={galleryIndex}
             onSelect={setGalleryIndex}
@@ -78,8 +84,8 @@ export function ProductDetailView({
             <div className="mt-3 xl:mt-3.5">
               <Price
                 price={product.price}
-                originalPrice={product.originalPrice}
-                discount={product.discount}
+                originalPrice={product.compareAtPrice}
+                discount={discountPercent(product)}
                 size="detail"
               />
             </div>
@@ -98,7 +104,7 @@ export function ProductDetailView({
         <section className="pt-12 pb-12 xl:pt-16 xl:pb-16">
           <Container>
             <SectionHeading className="mb-8 xl:mb-14">
-              You might also like
+              Có thể bạn cũng thích
             </SectionHeading>
             <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none xl:grid xl:grid-cols-4 xl:gap-5 xl:overflow-visible xl:pb-0">
               {related.map((item) => (

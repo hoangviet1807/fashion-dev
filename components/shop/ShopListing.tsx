@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Container } from "@/components/layout/Container";
 import { ProductCard } from "@/components/product/ProductCard";
 import { FiltersPanel } from "@/components/shop/FiltersPanel";
@@ -12,22 +13,27 @@ import {
   DEFAULT_COLOR,
   DEFAULT_PRICE,
   DEFAULT_SIZE,
-  filterProducts,
-  shopProducts,
   styleLabel,
   type CategoryId,
   type DressStyleId,
-} from "@/lib/shop-data";
-
-const PAGE_SIZE = 9;
+} from "@/lib/catalog";
+import { buildShopHref, type ShopQuery } from "@/lib/shop-params";
+import type { ProductSort, ProductSummary } from "@/lib/types/product";
 
 export function ShopListing({
-  style,
-  category,
+  query,
+  products,
+  total,
+  pageSize,
 }: {
-  style?: DressStyleId;
-  category?: CategoryId;
+  query: ShopQuery;
+  /** Items for the current page, already filtered and sorted on the server. */
+  products: ProductSummary[];
+  total: number;
+  pageSize: number;
 }) {
+  const router = useRouter();
+  const { style, category, sort } = query;
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [expanded, setExpanded] = useState({
     price: true,
@@ -35,36 +41,24 @@ export function ShopListing({
     size: true,
     style: true,
   });
-  const [color, setColor] = useState(DEFAULT_COLOR);
-  const [size, setSize] = useState(DEFAULT_SIZE);
-  const [price, setPrice] = useState<[number, number]>(DEFAULT_PRICE);
-  const [sort, setSort] = useState<"most-popular" | "low-price" | "high-price">(
-    "most-popular",
+  const [color, setColor] = useState(query.facets?.color ?? DEFAULT_COLOR);
+  const [size, setSize] = useState(query.facets?.size ?? DEFAULT_SIZE);
+  const [price, setPrice] = useState<[number, number]>(
+    query.facets?.price ?? DEFAULT_PRICE,
   );
-  const [page, setPage] = useState(1);
-  const [applied, setApplied] = useState(false);
 
   const title = category ? categoryLabel(category) : styleLabel(style ?? "casual");
 
-  const products = useMemo(
-    () =>
-      filterProducts(
-        shopProducts,
-        { style, category, color, size, price, sort },
-        { applyFacets: applied },
-      ),
-    [applied, category, color, price, size, sort, style],
-  );
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const currentPage = Math.min(query.page, totalPages);
+  const pageItems = products;
 
-  const totalPages = Math.max(1, Math.ceil(products.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const pageItems = products.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
-  );
+  const start = total === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const end = Math.min(currentPage * pageSize, total);
 
-  const start = products.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
-  const end = Math.min(currentPage * PAGE_SIZE, products.length);
+  function navigate(next: Partial<ShopQuery>) {
+    router.push(buildShopHref({ ...query, ...next }), { scroll: false });
+  }
 
   const panelProps = {
     style,
@@ -79,8 +73,7 @@ export function ShopListing({
     onSize: (value: string) => setSize(value),
     onPrice: (value: [number, number]) => setPrice(value),
     onApply: () => {
-      setApplied(true);
-      setPage(1);
+      navigate({ facets: { color, size, price }, page: 1 });
       setFiltersOpen(false);
     },
     categoryHref: (id: CategoryId) => {
@@ -108,7 +101,7 @@ export function ShopListing({
         <div className="flex items-start gap-5 pt-2 pb-12 xl:pt-4 xl:pb-16">
           <aside className="hidden w-[295px] shrink-0 rounded-[20px] border border-line px-6 py-5 lg:block">
             <div className="mb-6 flex items-center justify-between">
-              <span className="text-xl font-bold">Filters</span>
+              <span className="text-xl font-bold">Bộ lọc</span>
               <span className="relative size-6 overflow-clip">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -131,7 +124,7 @@ export function ShopListing({
                 </h1>
                 <button
                   type="button"
-                  aria-label="Open filters"
+                  aria-label="Mở bộ lọc"
                   onClick={() => setFiltersOpen(true)}
                   className="inline-flex size-8 items-center justify-center rounded-full bg-muted lg:hidden"
                 >
@@ -148,20 +141,17 @@ export function ShopListing({
 
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-text-60 xl:text-base">
                 <span>
-                  Showing {start}-{end} of {products.length} Products
+                  Hiển thị {start}-{end} trên {total} sản phẩm
                 </span>
                 <label className="hidden items-center sm:flex">
-                  Sort by:
+                  Sắp xếp:
                   <select
                     value={sort}
                     onChange={(event) => {
-                      setSort(
-                        event.target.value as
-                          | "most-popular"
-                          | "low-price"
-                          | "high-price",
-                      );
-                      setPage(1);
+                      navigate({
+                        sort: event.target.value as ProductSort,
+                        page: 1,
+                      });
                     }}
                     className="cursor-pointer appearance-none bg-transparent py-0 pr-6 pl-1 font-medium text-black outline-none"
                     style={{
@@ -171,9 +161,9 @@ export function ShopListing({
                       backgroundSize: "16px 16px",
                     }}
                   >
-                    <option value="most-popular">Most Popular</option>
-                    <option value="low-price">Low Price</option>
-                    <option value="high-price">High Price</option>
+                    <option value="most-popular">Phổ biến nhất</option>
+                    <option value="low-price">Giá thấp đến cao</option>
+                    <option value="high-price">Giá cao đến thấp</option>
                   </select>
                 </label>
               </div>
@@ -187,7 +177,7 @@ export function ShopListing({
               </div>
             ) : (
               <p className="mt-10 text-base text-text-60">
-                No products match those filters.
+                Không có sản phẩm phù hợp với bộ lọc.
               </p>
             )}
 
@@ -196,7 +186,7 @@ export function ShopListing({
               <PaginationBar
                 page={currentPage}
                 totalPages={totalPages}
-                onPage={setPage}
+                onPage={(page) => navigate({ page })}
               />
             </div>
           </div>

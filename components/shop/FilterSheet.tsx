@@ -33,7 +33,7 @@ export function FilterSheet({
     <div className="fixed inset-0 z-50 lg:hidden">
       <button
         type="button"
-        aria-label="Close filters"
+        aria-label="Đóng bộ lọc"
         className="absolute inset-0 bg-black/40"
         onClick={onClose}
       />
@@ -48,11 +48,11 @@ export function FilterSheet({
         </div>
         <div className="flex items-center justify-between px-5 py-4">
           <h2 id="filters-sheet-title" className="text-xl font-bold">
-            Filters
+            Bộ lọc
           </h2>
           <button
             type="button"
-            aria-label="Close filters"
+            aria-label="Đóng bộ lọc"
             onClick={onClose}
             className="inline-flex size-6 items-center justify-center overflow-clip"
           >

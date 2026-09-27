@@ -1,35 +1,16 @@
-import localFont from "next/font/local";
+import { Be_Vietnam_Pro, Montserrat } from "next/font/google";
 
-export const satoshi = localFont({
-  src: [
-    {
-      path: "./fonts/Satoshi-Regular.woff2",
-      weight: "400",
-      style: "normal",
-    },
-    {
-      path: "./fonts/Satoshi-Medium.woff2",
-      weight: "500",
-      style: "normal",
-    },
-    {
-      path: "./fonts/Satoshi-Bold.woff2",
-      weight: "700",
-      style: "normal",
-    },
-  ],
-  variable: "--font-satoshi",
+/** Both faces must cover Vietnamese (ơ, ư, ạ, ế, ₫ …); Satoshi / Integral CF did not. */
+export const bodyFont = Be_Vietnam_Pro({
+  subsets: ["latin", "vietnamese"],
+  weight: ["400", "500", "700"],
+  variable: "--font-body",
   display: "swap",
 });
 
-export const integral = localFont({
-  src: [
-    {
-      path: "./fonts/IntegralCF-Bold.woff2",
-      weight: "700",
-      style: "normal",
-    },
-  ],
-  variable: "--font-integral",
+export const displayFont = Montserrat({
+  subsets: ["latin", "vietnamese"],
+  weight: "700",
+  variable: "--font-heading",
   display: "swap",
 });

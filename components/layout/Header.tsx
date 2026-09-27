@@ -7,9 +7,11 @@ import { Logo } from "@/components/ui/Logo";
 import { TextField } from "@/components/ui/TextField";
 import { IconButton } from "@/components/ui/IconButton";
 import { navLinks } from "@/lib/home-data";
-import { CATEGORIES } from "@/lib/shop-data";
+import { CATEGORIES } from "@/lib/catalog";
+import { useCartCount } from "@/lib/cart/store";
 
 export function Header() {
+  const cartCount = useCartCount();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
@@ -21,7 +23,7 @@ export function Header() {
         <div className="flex min-w-0 items-center gap-4">
           <IconButton
             src="/icons/hamburger.svg"
-            label={menuOpen ? "Close menu" : "Open menu"}
+            label={menuOpen ? "Đóng menu" : "Mở menu"}
             className="lg:hidden"
             onClick={() => setMenuOpen((value) => !value)}
           />
@@ -90,7 +92,7 @@ export function Header() {
         <form className="hidden min-w-0 flex-1 lg:block" action="#new-arrivals">
           <TextField
             icon="/icons/search.svg"
-            placeholder="Search for products..."
+            placeholder="Tìm kiếm sản phẩm..."
             type="search"
             name="q"
             className="w-full"
@@ -100,21 +102,26 @@ export function Header() {
         <div className="ml-auto flex shrink-0 items-center gap-3">
           <IconButton
             src="/icons/search.svg"
-            label="Search"
+            label="Tìm kiếm"
             className="lg:hidden"
             onClick={() => setSearchOpen((value) => !value)}
           />
           <Link
             href="/cart"
-            aria-label="Cart"
-            className="inline-flex size-6 shrink-0 overflow-clip"
+            aria-label={cartCount > 0 ? `Giỏ hàng, ${cartCount} sản phẩm` : "Giỏ hàng"}
+            className="relative inline-flex size-6 shrink-0"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/icons/cart.svg" alt="" width={24} height={24} className="size-full" />
+            {cartCount > 0 ? (
+              <span className="absolute -top-1.5 -right-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-black px-1 text-[10px] font-medium leading-none text-white">
+                {cartCount > 99 ? "99+" : cartCount}
+              </span>
+            ) : null}
           </Link>
           <Link
             href="#account"
-            aria-label="Account"
+            aria-label="Tài khoản"
             className="inline-flex size-6 shrink-0 overflow-clip"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -127,7 +134,7 @@ export function Header() {
         <Container className="pb-4 lg:hidden">
           <TextField
             icon="/icons/search.svg"
-            placeholder="Search for products..."
+            placeholder="Tìm kiếm sản phẩm..."
             type="search"
             name="q"
           />
@@ -150,7 +157,7 @@ export function Header() {
                     </Link>
                     <button
                       type="button"
-                      aria-label="Toggle shop categories"
+                      aria-label="Mở danh mục sản phẩm"
                       aria-expanded={mobileShopOpen}
                       className="inline-flex size-8 items-center justify-center"
                       onClick={() => setMobileShopOpen((value) => !value)}

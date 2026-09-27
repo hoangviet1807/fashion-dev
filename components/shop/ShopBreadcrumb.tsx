@@ -5,7 +5,7 @@ export function ShopBreadcrumb({ current }: { current: string }) {
   return (
     <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-base">
       <Link href="/" className="text-text-60">
-        Home
+        Trang chủ
       </Link>
       <span className="relative size-4 rotate-[-90deg] overflow-clip">
         {/* eslint-disable-next-line @next/next/no-img-element */}

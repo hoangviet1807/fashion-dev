@@ -1,7 +1,7 @@
-import { brands } from "@/lib/home-data";
+import type { BrandLogo } from "@/lib/data/content";
 import { Container } from "@/components/layout/Container";
 
-export function BrandBar() {
+export function BrandBar({ brands }: { brands: BrandLogo[] }) {
   return (
     <section id="brands" className="bg-black py-11 xl:py-[42px]">
       <Container>

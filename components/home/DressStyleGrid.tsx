@@ -42,7 +42,7 @@ export function DressStyleGrid() {
       <Container>
         <div className="rounded-[20px] bg-muted px-6 py-10 xl:rounded-[40px] xl:px-16 xl:py-[70px]">
           <SectionHeading className="mb-7 xl:mb-[64px]">
-            BROWSE BY dress STYLE
+            MUA SẮM THEO PHONG CÁCH
           </SectionHeading>
           <div className="flex flex-col gap-4 md:hidden">
             {dressStyles.map((style) => (

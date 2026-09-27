@@ -11,9 +11,10 @@ import {
   DRESS_STYLES,
   PRICE_BOUNDS,
   SIZES,
+  colorLabel,
   type CategoryId,
   type DressStyleId,
-} from "@/lib/shop-data";
+} from "@/lib/catalog";
 
 type Expanded = {
   price: boolean;
@@ -79,7 +80,7 @@ export function FiltersPanel({
           onClick={() => onToggle("price")}
           aria-expanded={expanded.price}
         >
-          <span className="text-xl font-bold">Price</span>
+          <span className="text-xl font-bold">Giá</span>
           <Chevron direction={expanded.price ? "up" : "down"} />
         </button>
         {expanded.price ? (
@@ -87,6 +88,7 @@ export function FiltersPanel({
             <PriceSlider
               min={PRICE_BOUNDS.min}
               max={PRICE_BOUNDS.max}
+              step={PRICE_BOUNDS.step}
               value={price}
               onChange={onPrice}
             />
@@ -103,7 +105,7 @@ export function FiltersPanel({
           onClick={() => onToggle("colors")}
           aria-expanded={expanded.colors}
         >
-          <span className="text-xl font-bold">Colors</span>
+          <span className="text-xl font-bold">Màu sắc</span>
           <Chevron direction={expanded.colors ? "up" : "down"} />
         </button>
         {expanded.colors ? (
@@ -114,7 +116,7 @@ export function FiltersPanel({
                 <button
                   key={swatch.id}
                   type="button"
-                  aria-label={swatch.id}
+                  aria-label={colorLabel(swatch.id)}
                   aria-pressed={selected}
                   onClick={() => onColor(swatch.id)}
                   className="flex size-9 items-center justify-center rounded-full border border-black/20 xl:size-10"
@@ -143,7 +145,7 @@ export function FiltersPanel({
           onClick={() => onToggle("size")}
           aria-expanded={expanded.size}
         >
-          <span className="text-xl font-bold">Size</span>
+          <span className="text-xl font-bold">Kích cỡ</span>
           <Chevron direction={expanded.size ? "up" : "down"} />
         </button>
         {expanded.size ? (
@@ -179,7 +181,7 @@ export function FiltersPanel({
           onClick={() => onToggle("style")}
           aria-expanded={expanded.style}
         >
-          <span className="text-xl font-bold">Dress Style</span>
+          <span className="text-xl font-bold">Phong cách</span>
           <Chevron direction={expanded.style ? "up" : "down"} />
         </button>
         {expanded.style ? (
@@ -201,7 +203,7 @@ export function FiltersPanel({
       </section>
 
       <Button onClick={onApply} fullWidth className="px-6 text-sm xl:text-base">
-        Apply Filter
+        Áp dụng
       </Button>
     </div>
   );

@@ -4,17 +4,17 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Rating } from "@/components/ui/Rating";
 import { Icon } from "@/components/ui/Icon";
-import type { ProductDetail } from "@/lib/product-data";
+import type { Product } from "@/lib/types/product";
 
 type TabId = "details" | "reviews" | "faqs";
 
 const TABS: { id: TabId; label: string }[] = [
-  { id: "details", label: "Product Details" },
-  { id: "reviews", label: "Rating & Reviews" },
-  { id: "faqs", label: "FAQs" },
+  { id: "details", label: "Chi tiết sản phẩm" },
+  { id: "reviews", label: "Đánh giá" },
+  { id: "faqs", label: "Câu hỏi thường gặp" },
 ];
 
-export function ProductTabs({ product }: { product: ProductDetail }) {
+export function ProductTabs({ product }: { product: Product }) {
   const [tab, setTab] = useState<TabId>("reviews");
 
   return (
@@ -46,12 +46,12 @@ export function ProductTabs({ product }: { product: ProductDetail }) {
   );
 }
 
-function DetailsPanel({ product }: { product: ProductDetail }) {
+function DetailsPanel({ product }: { product: Product }) {
   const { details } = product;
   return (
     <div className="flex flex-col gap-8 pt-6 xl:pt-8">
       <section>
-        <h3 className="text-xl font-bold">Material & Care</h3>
+        <h3 className="text-xl font-bold">Chất liệu & bảo quản</h3>
         <ul className="mt-3 list-disc space-y-2 pl-5 text-base text-text-60">
           {details.material.map((item) => (
             <li key={item}>{item}</li>
@@ -59,7 +59,7 @@ function DetailsPanel({ product }: { product: ProductDetail }) {
         </ul>
       </section>
       <section>
-        <h3 className="text-xl font-bold">Fit & Sizing</h3>
+        <h3 className="text-xl font-bold">Dáng & kích cỡ</h3>
         <ul className="mt-3 list-disc space-y-2 pl-5 text-base text-text-60">
           {details.fit.map((item) => (
             <li key={item}>{item}</li>
@@ -67,7 +67,7 @@ function DetailsPanel({ product }: { product: ProductDetail }) {
         </ul>
       </section>
       <section>
-        <h3 className="text-xl font-bold">Design Features</h3>
+        <h3 className="text-xl font-bold">Đặc điểm thiết kế</h3>
         <p className="mt-3 text-base text-text-60">{details.featuresIntro}</p>
         <ul className="mt-3 list-disc space-y-2 pl-5 text-base text-text-60">
           {details.features.map((item) => (
@@ -79,12 +79,12 @@ function DetailsPanel({ product }: { product: ProductDetail }) {
   );
 }
 
-function ReviewsPanel({ product }: { product: ProductDetail }) {
+function ReviewsPanel({ product }: { product: Product }) {
   return (
     <div className="pt-6 xl:pt-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h3 className="text-xl font-bold xl:text-2xl">
-          All Reviews{" "}
+          Tất cả đánh giá{" "}
           <span className="text-base font-normal text-text-60">
             ({product.reviewCount})
           </span>
@@ -92,7 +92,7 @@ function ReviewsPanel({ product }: { product: ProductDetail }) {
         <div className="flex items-center gap-2.5">
           <button
             type="button"
-            aria-label="Filter reviews"
+            aria-label="Lọc đánh giá"
             className="inline-flex size-10 items-center justify-center rounded-full bg-muted xl:size-12"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -108,10 +108,10 @@ function ReviewsPanel({ product }: { product: ProductDetail }) {
             variant="secondary"
             className="hidden h-12 px-5 text-sm sm:inline-flex xl:px-6 xl:text-base"
           >
-            Latest
+            Mới nhất
           </Button>
           <Button className="h-10 px-4 text-xs xl:h-12 xl:px-5 xl:text-base">
-            Write a Review
+            Viết đánh giá
           </Button>
         </div>
       </div>
@@ -142,14 +142,14 @@ function ReviewsPanel({ product }: { product: ProductDetail }) {
           variant="secondary"
           className="h-[47px] w-full px-9 text-sm xl:h-[52px] xl:w-auto xl:text-base"
         >
-          Load More Reviews
+          Xem thêm đánh giá
         </Button>
       </div>
     </div>
   );
 }
 
-function FaqsPanel({ product }: { product: ProductDetail }) {
+function FaqsPanel({ product }: { product: Product }) {
   return (
     <div className="flex flex-col divide-y divide-line pt-2 xl:pt-4">
       {product.faqs.map((faq) => (

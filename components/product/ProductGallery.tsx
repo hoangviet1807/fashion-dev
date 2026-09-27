@@ -25,7 +25,7 @@ export function ProductGallery({
               key={`${src}-${index}`}
               type="button"
               onClick={() => onSelect(index)}
-              aria-label={`View image ${index + 1}`}
+              aria-label={`Xem ảnh ${index + 1}`}
               aria-pressed={selected}
               className={`relative h-[106px] flex-1 overflow-hidden rounded-[20px] bg-product xl:h-[167px] xl:w-[152px] xl:flex-none ${
                 selected ? "ring-1 ring-black" : ""

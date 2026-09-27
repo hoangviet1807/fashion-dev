@@ -20,6 +20,7 @@ export function Button({
   fullWidth,
   onClick,
   disabled,
+  form,
 }: {
   href?: string;
   children: React.ReactNode;
@@ -29,6 +30,7 @@ export function Button({
   fullWidth?: boolean;
   onClick?: () => void;
   disabled?: boolean;
+  form?: string;
 }) {
   const classes = `inline-flex h-[52px] items-center justify-center overflow-hidden rounded-[62px] px-[54px] py-4 font-medium text-base transition-colors disabled:opacity-50 ${fullWidth ? "w-full" : ""} ${variants[variant]} ${className}`;
 
@@ -41,7 +43,13 @@ export function Button({
   }
 
   return (
-    <button type={type} className={classes} onClick={onClick} disabled={disabled}>
+    <button
+      type={type}
+      form={form}
+      className={classes}
+      onClick={onClick}
+      disabled={disabled}
+    >
       {children}
     </button>
   );

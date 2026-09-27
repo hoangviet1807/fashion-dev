@@ -50,7 +50,7 @@ Keep these unless Figma for a new page clearly contradicts them:
 
 - Figma over generated MCP layout. Absolute-positioned reference code was rebuilt as normal document flow.
 - No dark mode.
-- Display font file is Clash Display standing in for Integral CF (see [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md)).
+- Display font is Montserrat Bold standing in for Integral CF, for Vietnamese glyph support (see [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md)).
 - Catalog is static (`lib/home-data.ts`, `lib/shop-data.ts`, `lib/product-data.ts`, `lib/cart-data.ts`).
 - Shop chevron has no open-menu frame; Shop goes to `/shop`.
 - Default Casual listing matches the Figma 9-card grid. Color/size/price apply when Apply Filter is pressed.

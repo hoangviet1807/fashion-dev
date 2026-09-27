@@ -1,4 +1,4 @@
-import type { Product } from "@/lib/home-data";
+import type { ProductSummary } from "@/lib/types/product";
 import { Container } from "@/components/layout/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Button } from "@/components/ui/Button";
@@ -12,7 +12,7 @@ export function ProductSection({
 }: {
   id: string;
   title: string;
-  products: Product[];
+  products: ProductSummary[];
   divider?: boolean;
 }) {
   return (
@@ -30,7 +30,7 @@ export function ProductSection({
             variant="secondary"
             className="h-[46px] w-full px-14 xl:h-[52px] xl:w-[218px]"
           >
-            View All
+            Xem tất cả
           </Button>
         </div>
         {divider ? (

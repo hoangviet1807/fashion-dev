@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { Product } from "@/lib/home-data";
+import type { ProductSummary } from "@/lib/types/product";
 import { Rating } from "@/components/ui/Rating";
 import { Price } from "@/components/ui/Price";
 
@@ -8,7 +8,7 @@ export function ProductCard({
   product,
   layout = "carousel",
 }: {
-  product: Product;
+  product: ProductSummary;
   layout?: "carousel" | "grid";
 }) {
   const width =
@@ -19,7 +19,7 @@ export function ProductCard({
       : "h-[200px] xl:h-[298px]";
 
   return (
-    <Link href={`/product/${product.id}`} className={`flex flex-col ${width}`}>
+    <Link href={`/product/${product.slug}`} className={`flex flex-col ${width}`}>
       <div className={`relative overflow-hidden rounded-[20px] bg-product ${imageBox}`}>
         <Image
           src={product.image}
@@ -42,7 +42,7 @@ export function ProductCard({
       <div className="mt-1 xl:mt-2">
         <Price
           price={product.price}
-          originalPrice={product.originalPrice}
+          originalPrice={product.compareAtPrice}
           discount={product.discount}
         />
       </div>

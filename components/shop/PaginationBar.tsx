@@ -65,7 +65,7 @@ export function PaginationBar({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/icons/arrow-left.svg" alt="" width={20} height={20} className="size-full" />
         </span>
-        Previous
+        Trước
       </button>
 
       <div className="flex items-center">
@@ -98,7 +98,7 @@ export function PaginationBar({
         disabled={page >= totalPages}
         className="inline-flex h-9 items-center gap-2 rounded-lg border border-line px-3.5 text-sm font-medium disabled:opacity-40 xl:h-10"
       >
-        Next
+        Sau
         <span className="relative size-5 -rotate-90 overflow-clip">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/icons/arrow-right.svg" alt="" width={20} height={20} className="size-full" />

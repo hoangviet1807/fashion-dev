@@ -2,9 +2,9 @@ import Image from "next/image";
 import { Button } from "@/components/ui/Button";
 
 const stats = [
-  { value: "200+", label: "International Brands" },
-  { value: "2,000+", label: "High-Quality Products" },
-  { value: "30,000+", label: "Happy Customers" },
+  { value: "200+", label: "Thương hiệu quốc tế" },
+  { value: "2.000+", label: "Sản phẩm chất lượng" },
+  { value: "30.000+", label: "Khách hàng hài lòng" },
 ];
 
 export function Hero() {
@@ -13,15 +13,14 @@ export function Hero() {
       <div className="mx-auto flex max-w-[1440px] flex-col xl:flex-row xl:items-stretch">
         <div className="flex flex-col px-4 pt-10 pb-7 xl:w-[640px] xl:shrink-0 xl:px-0 xl:pt-[103px] xl:pr-8 xl:pb-[116px] xl:pl-[100px]">
           <h1 className="font-display max-w-[315px] text-[36px] leading-9 text-black xl:max-w-[577px] xl:text-[64px] xl:leading-[64px]">
-            FIND CLOTHES THAT MATCHES YOUR STYLE
+            TRANG PHỤC HỢP PHONG CÁCH CỦA BẠN
           </h1>
           <p className="mt-4 max-w-[545px] text-sm leading-[22px] text-text-60 xl:mt-8 xl:text-base">
-            Browse through our diverse range of meticulously crafted garments,
-            designed to bring out your individuality and cater to your sense of
-            style.
+            Khám phá bộ sưu tập trang phục đa dạng, được chế tác tỉ mỉ để tôn
+            lên cá tính và phù hợp với gu thời trang của bạn.
           </p>
           <Button href="/shop" className="mt-6 w-full xl:mt-8 xl:w-[210px]">
-            Shop Now
+            Mua ngay
           </Button>
           <div className="mt-5 flex flex-wrap items-center justify-center gap-y-3 xl:mt-12 xl:flex-nowrap xl:justify-start xl:gap-8">
             {stats.map((stat, index) => (
@@ -54,7 +53,7 @@ export function Hero() {
         <div className="relative mt-auto h-[448px] w-full overflow-hidden xl:h-[663px] xl:min-w-0 xl:flex-1">
           <Image
             src="/images/hero.png"
-            alt="Models wearing Shop.co outfits"
+            alt="Người mẫu mặc trang phục Shop.co"
             fill
             priority
             sizes="(max-width: 1280px) 100vw, 720px"

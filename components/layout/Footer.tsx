@@ -13,8 +13,8 @@ export function Footer() {
             <div className="flex flex-col gap-[25px]">
               <Logo size="footer" />
               <p className="text-sm leading-[22px] text-text-60">
-                We have clothes that suits your style and which you’re proud to
-                wear. From women to men.
+                Trang phục hợp phong cách để bạn tự tin mặc mỗi ngày. Dành cho
+                cả nam và nữ.
               </p>
             </div>
             <SocialLinks className="hidden xl:flex" />
@@ -43,7 +43,7 @@ export function Footer() {
 
         <div className="mt-8 border-t border-line pt-4 xl:mt-12 xl:flex xl:items-center xl:justify-between xl:pt-5">
           <p className="text-center text-sm text-text-60 xl:text-left">
-            Shop.co © 2000-2023, All Rights Reserved
+            Shop.co © 2000-2023. Bảo lưu mọi quyền.
           </p>
           <PaymentBadges className="mt-4 justify-center xl:mt-0" />
         </div>

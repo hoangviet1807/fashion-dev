@@ -1,13 +1,17 @@
 "use client";
 
+import { formatPrice } from "@/lib/money";
+
 export function PriceSlider({
   min,
   max,
+  step = 1,
   value,
   onChange,
 }: {
   min: number;
   max: number;
+  step?: number;
   value: [number, number];
   onChange: (value: [number, number]) => void;
 }) {
@@ -28,11 +32,12 @@ export function PriceSlider({
           type="range"
           min={min}
           max={max}
+          step={step}
           value={low}
-          aria-label="Minimum price"
+          aria-label="Giá thấp nhất"
           className="price-range absolute inset-0 z-[1] w-full"
           onChange={(event) => {
-            const next = Math.min(Number(event.target.value), high - 1);
+            const next = Math.min(Number(event.target.value), high - step);
             onChange([next, high]);
           }}
         />
@@ -40,18 +45,19 @@ export function PriceSlider({
           type="range"
           min={min}
           max={max}
+          step={step}
           value={high}
-          aria-label="Maximum price"
+          aria-label="Giá cao nhất"
           className="price-range absolute inset-0 z-[2] w-full"
           onChange={(event) => {
-            const next = Math.max(Number(event.target.value), low + 1);
+            const next = Math.max(Number(event.target.value), low + step);
             onChange([low, next]);
           }}
         />
       </div>
       <div className="mt-3 flex items-center justify-between text-sm font-medium">
-        <span>${low}</span>
-        <span>${high}</span>
+        <span>{formatPrice(low)}</span>
+        <span>{formatPrice(high)}</span>
       </div>
     </div>
   );

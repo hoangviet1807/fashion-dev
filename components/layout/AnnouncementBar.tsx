@@ -11,14 +11,14 @@ export function AnnouncementBar() {
   return (
     <div className="relative flex h-[34px] items-center justify-center bg-black px-4 xl:h-[38px]">
       <p className="text-center text-xs text-white xl:text-sm">
-        Sign up and get 20% off to your first order.{" "}
+        Đăng ký để được giảm 20% cho đơn hàng đầu tiên.{" "}
         <a href="#newsletter" className="font-medium underline">
-          Sign Up Now
+          Đăng ký ngay
         </a>
       </p>
       <IconButton
         src="/icons/close.svg"
-        label="Dismiss announcement"
+        label="Đóng thông báo"
         size={20}
         className="absolute top-1/2 right-4 hidden size-5 -translate-y-1/2 xl:right-[100px] xl:inline-flex"
         onClick={() => setOpen(false)}

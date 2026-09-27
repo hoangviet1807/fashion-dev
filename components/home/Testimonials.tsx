@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { reviews } from "@/lib/home-data";
+import type { Testimonial } from "@/lib/data/content";
 import { Container } from "@/components/layout/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Rating } from "@/components/ui/Rating";
@@ -23,7 +23,7 @@ function TestimonialCard({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/icons/verified.svg"
-            alt="Verified"
+            alt="Đã xác minh"
             width={24}
             height={24}
             className="size-full"
@@ -37,7 +37,7 @@ function TestimonialCard({
   );
 }
 
-export function Testimonials() {
+export function Testimonials({ reviews }: { reviews: Testimonial[] }) {
   const [index, setIndex] = useState(0);
   const last = reviews.length - 1;
 
@@ -49,21 +49,23 @@ export function Testimonials() {
     setIndex((value) => (value === last ? 0 : value + 1));
   }
 
+  if (reviews.length === 0) return null;
+
   return (
     <section className="overflow-hidden pt-12 pb-4 xl:pt-[80px] xl:pb-8">
       <Container>
         <div className="mb-6 flex items-end justify-between gap-4 xl:mb-10">
-          <SectionHeading align="left">OUR HAPPY CUSTOMERS</SectionHeading>
+          <SectionHeading align="left">KHÁCH HÀNG NÓI GÌ VỀ CHÚNG TÔI</SectionHeading>
           <div className="mb-1 flex shrink-0 items-center gap-4">
             <IconButton
               src="/icons/arrow-left.svg"
-              label="Previous testimonials"
+              label="Đánh giá trước"
               onClick={prev}
               className="rotate-90"
             />
             <IconButton
               src="/icons/arrow-right.svg"
-              label="Next testimonials"
+              label="Đánh giá tiếp theo"
               onClick={next}
               className="-rotate-90"
             />

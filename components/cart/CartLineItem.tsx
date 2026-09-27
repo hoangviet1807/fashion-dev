@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import type { CartLine } from "@/lib/cart-data";
+import { colorLabel } from "@/lib/catalog";
+import { formatPrice } from "@/lib/money";
+import type { CartLine } from "@/lib/cart/store";
 import { Icon } from "@/components/ui/Icon";
 
 export function CartLineItem({
@@ -11,13 +13,13 @@ export function CartLineItem({
   onRemove,
 }: {
   item: CartLine;
-  onQty: (id: string, quantity: number) => void;
-  onRemove: (id: string) => void;
+  onQty: (sku: string, quantity: number) => void;
+  onRemove: (sku: string) => void;
 }) {
   return (
     <div className="flex items-start gap-3.5 xl:gap-4">
       <Link
-        href={`/product/${item.id}`}
+        href={`/product/${item.slug}`}
         className="relative size-[99px] shrink-0 overflow-hidden rounded-[8.66px] bg-product xl:size-[124px] xl:rounded-[8.66px]"
       >
         <Image
@@ -33,25 +35,25 @@ export function CartLineItem({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <Link
-              href={`/product/${item.id}`}
+              href={`/product/${item.slug}`}
               className="block truncate text-base font-bold leading-[22px] text-black xl:text-xl xl:leading-[27px]"
             >
               {item.name}
             </Link>
             <p className="mt-0.5 text-xs leading-[16px] xl:text-sm xl:leading-[19px]">
-              <span className="text-black">Size: </span>
+              <span className="text-black">Kích cỡ: </span>
               <span className="text-text-60">{item.size}</span>
             </p>
             <p className="text-xs leading-[16px] xl:text-sm xl:leading-[19px]">
-              <span className="text-black">Color: </span>
-              <span className="text-text-60">{item.color}</span>
+              <span className="text-black">Màu: </span>
+              <span className="text-text-60">{colorLabel(item.color)}</span>
             </p>
           </div>
 
           <button
             type="button"
-            aria-label={`Remove ${item.name}`}
-            onClick={() => onRemove(item.id)}
+            aria-label={`Xoá ${item.name}`}
+            onClick={() => onRemove(item.sku)}
             className="shrink-0"
           >
             <Icon src="/icons/trash.svg" size={24} />
@@ -60,14 +62,14 @@ export function CartLineItem({
 
         <div className="mt-3 flex items-end justify-between gap-3 xl:mt-0">
           <span className="text-xl font-bold leading-none xl:text-2xl">
-            ${item.price}
+            {formatPrice(item.price)}
           </span>
 
           <div className="flex h-8 w-[105px] items-center justify-between rounded-[62px] bg-muted px-4 xl:h-10 xl:w-[126px] xl:px-5">
             <button
               type="button"
-              aria-label="Decrease quantity"
-              onClick={() => onQty(item.id, Math.max(1, item.quantity - 1))}
+              aria-label="Giảm số lượng"
+              onClick={() => onQty(item.sku, item.quantity - 1)}
               className="text-xl leading-none"
             >
               −
@@ -75,8 +77,9 @@ export function CartLineItem({
             <span className="text-sm font-medium">{item.quantity}</span>
             <button
               type="button"
-              aria-label="Increase quantity"
-              onClick={() => onQty(item.id, item.quantity + 1)}
+              aria-label="Tăng số lượng"
+              onClick={() => onQty(item.sku, item.quantity + 1)}
+              disabled={item.quantity >= item.stock}
               className="text-xl leading-none"
             >
               +

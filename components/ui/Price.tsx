@@ -1,3 +1,5 @@
+import { formatPrice } from "@/lib/money";
+
 export function Price({
   price,
   originalPrice,
@@ -15,11 +17,11 @@ export function Price({
       : "text-xl font-bold leading-none xl:text-2xl";
 
   return (
-    <div className="flex items-center gap-2.5">
-      <span className={amount}>${price}</span>
+    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+      <span className={amount}>{formatPrice(price)}</span>
       {originalPrice ? (
         <span className={`${amount} text-text-40 line-through`}>
-          ${originalPrice}
+          {formatPrice(originalPrice)}
         </span>
       ) : null}
       {discount ? (

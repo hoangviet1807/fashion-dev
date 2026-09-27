@@ -15,7 +15,7 @@ export function NewsletterBanner() {
       <Container>
         <div className="flex flex-col gap-8 rounded-[20px] bg-black px-6 py-8 md:px-8 xl:h-[180px] xl:flex-row xl:items-center xl:justify-between xl:px-16 xl:py-9">
           <h2 className="font-display max-w-[551px] text-[32px] leading-9 text-white xl:text-[40px] xl:leading-[45px]">
-            STAY UPTO DATE ABOUT OUR LATEST OFFERS
+            CẬP NHẬT ƯU ĐÃI MỚI NHẤT TỪ CHÚNG TÔI
           </h2>
           <form
             onSubmit={onSubmit}
@@ -23,7 +23,7 @@ export function NewsletterBanner() {
           >
             <TextField
               icon="/icons/mail.svg"
-              placeholder="Enter your email address"
+              placeholder="Nhập địa chỉ email của bạn"
               type="email"
               name="email"
               required
@@ -31,7 +31,7 @@ export function NewsletterBanner() {
               className="w-full"
             />
             <Button type="submit" variant="onDark" fullWidth className="h-[46px] px-4 py-3 xl:h-[46px]">
-              Subscribe to Newsletter
+              Đăng ký nhận bản tin
             </Button>
           </form>
         </div>

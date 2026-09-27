@@ -8,12 +8,12 @@ The UI is light-only. Black, white, and gray with red discount chips and yellow 
 
 | Role | Spec | How it is loaded |
 | --- | --- | --- |
-| Display / logo / section titles | Integral CF Bold | `next/font/local` → `--font-integral` → `font-display` |
-| UI, body, prices, nav | Satoshi Regular 400, Medium 500, Bold 700 | `next/font/local` → `--font-satoshi` → `font-sans` |
+| Display / logo / section titles | Montserrat Bold 700 (Figma: Integral CF Bold) | `next/font/google` → `--font-heading` → `font-display` |
+| UI, body, prices, nav | Be Vietnam Pro Regular 400, Medium 500, Bold 700 (Figma: Satoshi) | `next/font/google` → `--font-body` → `font-sans` |
 
-**Font files:** `app/fonts/`. Satoshi is from Fontshare. Licensed Integral CF was not in the repo, so `IntegralCF-Bold.woff2` is Clash Display Bold filling the same wide geometric display role. If licensed Integral CF is added later, replace that file only.
+**Vietnamese (phase 1.6):** the storefront is in Vietnamese. Satoshi and Integral CF (Clash Display stand-in) lack Vietnamese glyphs (ơ, ư, ạ, ế, ₫ …), so both were replaced in `app/fonts.ts` with Google fonts loaded with the `vietnamese` subset. Any replacement font must cover Vietnamese. Where this document says Satoshi / Integral CF, read Be Vietnam Pro / Montserrat.
 
-Ignore the stray Poppins instance on one Figma footer column. Use Satoshi.
+Ignore the stray Poppins instance on one Figma footer column. Use the body font.
 
 Product titles in Figma mix spans for fake small-caps. Render normal title case, not per-letter spans.
 
