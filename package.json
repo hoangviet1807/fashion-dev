@@ -17,12 +17,14 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@auth/drizzle-adapter": "^1.11.3",
     "@react-email/render": "^2.1.0",
     "@sanity/client": "^7.27.0",
     "@sanity/image-url": "^2.1.1",
     "@sanity/vision": "^5.31.2",
     "drizzle-orm": "^0.45.3",
     "next": "16.3.4",
+    "next-auth": "5.0.0-beta.32",
     "next-sanity": "^13.3.4",
     "postgres": "^3.4.9",
     "react": "19.2.8",

@@ -71,6 +71,8 @@ export type ProductSummary = {
 export type ProductSort = "most-popular" | "low-price" | "high-price";
 
 export type ProductFilters = {
+  /** Free-text search. */
+  q?: string;
   style?: DressStyleId;
   category?: CategoryId;
   color?: string;

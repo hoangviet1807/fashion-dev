@@ -56,8 +56,8 @@ export const checkoutItemsSchema = z
   .min(1, "Giỏ hàng của bạn đang trống.")
   .max(50, "Giỏ hàng có quá nhiều sản phẩm.");
 
-export const checkoutDetailsSchema = z.object({
-  email: z.email("Email không hợp lệ.").max(254, "Email quá dài."),
+/** Recipient + Vietnamese address; shared by checkout and the account address book. */
+export const addressFields = {
   phone: vnPhoneSchema,
   lastName: required("họ", 60),
   firstName: required("tên", 60),
@@ -65,6 +65,11 @@ export const checkoutDetailsSchema = z.object({
   apartment: z.string().trim().max(100, "Tối đa 100 ký tự.").optional().default(""),
   provinceCode: divisionCode("Vui lòng chọn tỉnh/thành phố."),
   wardCode: divisionCode("Vui lòng chọn phường/xã."),
+};
+
+export const checkoutDetailsSchema = z.object({
+  email: z.email("Email không hợp lệ.").max(254, "Email quá dài."),
+  ...addressFields,
   shipping: z.enum(["standard", "express"], "Vui lòng chọn phương thức giao hàng."),
   payment: z.enum(["vnpay", "momo", "cod"], "Vui lòng chọn phương thức thanh toán."),
   vnpayMethod: z

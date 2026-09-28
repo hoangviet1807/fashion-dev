@@ -19,6 +19,8 @@ export type CartLine = {
 
 type CartState = {
   items: CartLine[];
+  /** Signed-in user this cart mirrors in the database; null for a guest cart. */
+  owner: string | null;
   /** Returns the quantity actually added after capping at stock. */
   add: (line: Omit<CartLine, "quantity">, quantity: number) => number;
   updateQty: (sku: string, quantity: number) => void;
@@ -26,6 +28,10 @@ type CartState = {
   /** Overwrites the cart with server-verified lines. */
   replace: (lines: CartLine[]) => void;
   clear: () => void;
+  /** Adopts the server cart of `owner` without echoing it back to the database. */
+  attach: (owner: string, lines: CartLine[]) => void;
+  /** Forgets the signed-in cart locally (on sign-out); the saved copy is kept. */
+  detach: () => void;
   count: () => number;
 };
 
@@ -37,6 +43,7 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
+      owner: null,
 
       add: (line, quantity) => {
         const existing = get().items.find((item) => item.sku === line.sku);
@@ -74,6 +81,10 @@ export const useCartStore = create<CartState>()(
 
       clear: () => set({ items: [] }),
 
+      attach: (owner, lines) => set({ owner, items: lines }),
+
+      detach: () => set({ owner: null, items: [] }),
+
       count: () => get().items.reduce((sum, item) => sum + item.quantity, 0),
     }),
     {
@@ -81,9 +92,9 @@ export const useCartStore = create<CartState>()(
       version: 2,
       // v1 carts stored USD prices; they are dropped rather than shown as VND.
       migrate: (persisted, version) =>
-        (version < 2 ? { items: [] } : persisted) as Pick<CartState, "items">,
+        (version < 2 ? { items: [], owner: null } : persisted) as Pick<CartState, "items" | "owner">,
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ items: state.items }),
+      partialize: (state) => ({ items: state.items, owner: state.owner }),
       // Rehydrated after mount so server and first client render agree.
       skipHydration: true,
     },

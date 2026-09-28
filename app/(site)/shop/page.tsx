@@ -13,6 +13,7 @@ const PAGE_SIZE = 9;
 export default async function ShopPage({ searchParams }: PageProps<"/shop">) {
   const query = parseShopParams(await searchParams);
   const { items, total } = await getProducts({
+    q: query.q,
     style: query.style,
     category: query.category,
     ...query.facets,
@@ -23,7 +24,7 @@ export default async function ShopPage({ searchParams }: PageProps<"/shop">) {
 
   return (
     <ShopListing
-      key={`${query.style ?? ""}-${query.category ?? ""}`}
+      key={`${query.q ?? ""}-${query.style ?? ""}-${query.category ?? ""}`}
       query={query}
       products={items}
       total={total}

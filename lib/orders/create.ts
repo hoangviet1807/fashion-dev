@@ -27,12 +27,15 @@ export async function placeOrder({
   location,
   quote,
   ipAddr,
+  userId,
 }: {
   details: CheckoutDetails;
   /** Province and ward names resolved from the submitted codes. */
   location: { province: string; ward: string };
   quote: Quote;
   ipAddr: string;
+  /** Signed-in customer; null for guest checkout. */
+  userId: string | null;
 }): Promise<PlaceOrderResult> {
   const isCod = details.payment === "cod";
   const expiresAt = new Date(Date.now() + VNPAY_EXPIRE_MINUTES * 60 * 1000);
@@ -41,6 +44,7 @@ export async function placeOrder({
     const [order] = await tx
       .insert(orders)
       .values({
+        userId,
         status: isCod ? "awaiting_fulfillment" : "pending_payment",
         email: details.email,
         phone: details.phone,

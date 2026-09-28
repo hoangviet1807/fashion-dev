@@ -15,6 +15,20 @@
       "when": 1790534730790,
       "tag": "0001_add_momo_payment",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790614561982,
+      "tag": "0002_add_auth",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790617864623,
+      "tag": "0003_add_account",
+      "breakpoints": true
     }
   ]
 }

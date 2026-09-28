@@ -33,7 +33,7 @@ export function ShopListing({
   pageSize: number;
 }) {
   const router = useRouter();
-  const { style, category, sort } = query;
+  const { q, style, category, sort } = query;
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [expanded, setExpanded] = useState({
     price: true,
@@ -47,7 +47,11 @@ export function ShopListing({
     query.facets?.price ?? DEFAULT_PRICE,
   );
 
-  const title = category ? categoryLabel(category) : styleLabel(style ?? "casual");
+  const title = q
+    ? `Kết quả cho “${q}”`
+    : category
+      ? categoryLabel(category)
+      : styleLabel(style ?? "casual");
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const currentPage = Math.min(query.page, totalPages);
@@ -78,12 +82,14 @@ export function ShopListing({
     },
     categoryHref: (id: CategoryId) => {
       const params = new URLSearchParams();
+      if (q) params.set("q", q);
       if (style) params.set("style", style);
       params.set("category", id);
       return `/shop?${params.toString()}`;
     },
     styleHref: (id: DressStyleId) => {
       const params = new URLSearchParams();
+      if (q) params.set("q", q);
       params.set("style", id);
       if (category) params.set("category", category);
       return `/shop?${params.toString()}`;
@@ -177,7 +183,9 @@ export function ShopListing({
               </div>
             ) : (
               <p className="mt-10 text-base text-text-60">
-                Không có sản phẩm phù hợp với bộ lọc.
+                {q
+                  ? `Không tìm thấy sản phẩm nào cho “${q}”.`
+                  : "Không có sản phẩm phù hợp với bộ lọc."}
               </p>
             )}
 

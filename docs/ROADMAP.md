@@ -8,7 +8,7 @@
 | Giai đoạn | Nội dung | Ước lượng | Trạng thái |
 |---|---|---|---|
 | 1 | Luồng mua hàng cơ bản | 6–10 ngày | ✅ Xong |
-| 2 | Tài khoản & trải nghiệm | 5–7 ngày | ⬜ Chưa bắt đầu |
+| 2 | Tài khoản & trải nghiệm | 5–7 ngày | 🟨 Đang làm |
 | 3 | Vận hành & hoàn thiện | 5+ ngày | ⬜ Chưa bắt đầu |
 
 Ký hiệu: ⬜ Chưa bắt đầu · 🟨 Đang làm · ✅ Xong · 🎨 Có UI mới (cần duyệt)
@@ -42,11 +42,11 @@ Ký hiệu: ⬜ Chưa bắt đầu · 🟨 Đang làm · ✅ Xong · 🎨 Có UI
 
 **Chưa hoạt động:**
 - [ ] Nút Add to Cart (`components/product/ProductPurchase.tsx`)
-- [ ] Search (`components/layout/Header.tsx`)
+- [x] Search (`components/layout/Header.tsx`)
 - [x] Go to Checkout (`components/cart/OrderSummary.tsx`)
 - [ ] Promo code (luôn giảm cứng 20% — `lib/cart-data.ts`)
 - [ ] Newsletter (`components/layout/NewsletterBanner.tsx`)
-- [ ] Icon Account (link `#account`)
+- [x] Icon Account (link `/account`)
 - [ ] Reviews: Write / Load More / Sort (`components/product/ProductTabs.tsx`)
 - [ ] Link nav On Sale / New Arrivals / Brands, link footer
 - [ ] Số lượng trên icon giỏ hàng
@@ -112,22 +112,25 @@ Ký hiệu: ⬜ Chưa bắt đầu · 🟨 Đang làm · ✅ Xong · 🎨 Có UI
 
 ## Giai đoạn 2 — Tài khoản & trải nghiệm
 
-### 2.1 🎨 Đăng nhập
-- [ ] Auth.js + Drizzle adapter (email/mật khẩu + Google)
-- [ ] Trang `/login`, `/register`, `/forgot-password`
-- [ ] `proxy.ts` bảo vệ `/account/*`
-- [ ] Nối icon Account trong header
+### 2.1 🎨 Đăng nhập ✅ (chờ duyệt UI)
+- [x] Auth.js v5 + Drizzle adapter (`auth.ts`, `auth.config.ts`, route `app/api/auth/[...nextauth]`): email/mật khẩu (scrypt, `lib/auth/password.ts`) + OAuth Google / Facebook (mỗi nút chỉ hiện khi có `AUTH_<GOOGLE|FACEBOOK>_ID` / `_SECRET`; Facebook không trả email → báo lỗi `OAuthNoEmail`). Session JWT; bảng `users`, `accounts`, `password_reset_tokens` (migration `0002_add_auth`)
+- [x] Trang `/login`, `/register`, `/forgot-password`, `/reset-password` (`app/(site)/(auth)`, form ở `components/auth`, dựng từ `TextField` / `Button`, validate Zod client + server action). Quên mật khẩu: token 60 phút (lưu SHA-256, dùng 1 lần), email qua Resend, không lộ email nào đã đăng ký, chặn gửi lại trong 60 giây
+- [x] `proxy.ts` bảo vệ `/account/*` → `/login?callbackUrl=...` (chỉ nhận đường dẫn nội bộ)
+- [x] Nối icon Account trong header (`/account`); trang `/account` tạm: họ tên, email, đăng xuất (mở rộng ở 2.2)
+- **Bảo mật:** đăng nhập Google với email trùng tài khoản mật khẩu chưa xác minh → gộp tài khoản và xoá mật khẩu cũ (chống chiếm tài khoản bằng email người khác); đặt lại mật khẩu đánh dấu email đã xác minh. Chưa có rate limit đăng nhập (3.4)
 
-### 2.2 🎨 Trang tài khoản
-- [ ] `/account` — thông tin cá nhân
-- [ ] `/account/orders`, `/account/orders/[id]` — lịch sử & trạng thái đơn
-- [ ] `/account/addresses` — sổ địa chỉ
-- [ ] Gộp giỏ `localStorage` vào giỏ server khi đăng nhập
+### 2.2 🎨 Trang tài khoản ✅ (chờ duyệt UI)
+- [x] `/account` — thông tin cá nhân: sửa họ tên + SĐT (cột `users.phone`), đổi mật khẩu (chỉ tài khoản có mật khẩu). Layout chung `app/(site)/account/layout.tsx` + thanh tab `components/account/AccountNav.tsx` (Thông tin / Đơn hàng / Sổ địa chỉ / Đăng xuất), dựng từ style sẵn có
+- [x] `/account/orders`, `/account/orders/[id]` — lịch sử & trạng thái đơn (`lib/account/queries.ts`, nhãn trạng thái `lib/orders/status.ts`). Đơn gắn `orders.user_id` khi đặt lúc đã đăng nhập; đơn khách cùng email chỉ hiện khi email đã xác minh. Chi tiết đơn dùng chung `components/order/OrderDetails.tsx` với trang success; đơn của người khác → 404
+- [x] `/account/addresses` — sổ địa chỉ (bảng `addresses`, tối đa 10, một địa chỉ mặc định — unique index một phần): thêm / sửa / xoá / đặt mặc định, form Tỉnh → Phường/Xã dùng chung hook `lib/address/use-wards.ts`. Checkout tự điền email + địa chỉ mặc định khi đã đăng nhập
+- [x] Gộp giỏ `localStorage` vào giỏ server khi đăng nhập (bảng `cart_items`, chỉ lưu SKU + số lượng; giá / tồn kho đọc lại từ Sanity). `components/cart/CartSync.tsx` đồng bộ khi tải trang và ngay sau khi rời trang đăng nhập / đăng ký: giỏ khách được cộng dồn vào giỏ đã lưu (giới hạn theo tồn kho), sau đó mọi thay đổi được ghi lên server. Đăng xuất xoá giỏ trên trình duyệt, giỏ đã lưu vẫn còn cho lần đăng nhập sau
+- Migration `0003_add_account` (đã chạy)
 
-### 2.3 Tìm kiếm
-- [ ] Nối form search (desktop + mobile) tới `/shop?q=...`
-- [ ] Tìm theo tên / danh mục / tag bằng GROQ `match`
+### 2.3 Tìm kiếm ✅
+- [x] Nối form search (desktop + mobile) tới `/shop?q=...` (`next/form` trong `Header.tsx`, bỏ qua khi ô trống; form mobile tự đóng khi tìm). Tham số `q` kết hợp được với danh mục / phong cách / bộ lọc / sắp xếp / phân trang; khi có `q` không mặc định lọc "Thường ngày"; tiêu đề "Kết quả cho “…”"
+- [x] Tìm theo tên / danh mục / phong cách / thương hiệu / màu / tag bằng GROQ `match` (`SHOP_FILTER` trong `sanity/lib/queries.ts`, tiền tố `từ*`, mọi từ đều phải khớp). Trường `tags` mới trong schema `product` để biên tập viên thêm từ khoá (kể cả tiếng Việt). Vì nội dung catalog tiếng Anh, `lib/search.ts` dịch nhãn tiếng Việt sang slug ("áo thun đen" → `t-shirts black`, "quần bò" → `jeans`) và tìm song song với từ khoá gốc. Sắp xếp "Phổ biến nhất" ưu tiên sản phẩm có tên khớp (`score`)
 - [ ] (Tuỳ chọn) Algolia / Meilisearch
+- **Lưu ý:** `match` phân biệt dấu ("ao" không khớp "áo"); từ chung chung như "áo" / "quần" đứng một mình không lọc được gì
 
 ### 2.4 Mã giảm giá
 - [ ] Bảng `coupons` (phần trăm / cố định, đơn tối thiểu, hạn dùng, số lượt)
@@ -206,3 +209,6 @@ Hiện VNPay / MoMo chuyển khách sang trang của cổng để quét QR. Mụ
 | 28/09/2026 | 1.6: VND (Sanity + seed, `formatPrice` vi-VN), UI / email / Zod tiếng Việt, form địa chỉ Tỉnh → Phường/Xã (34 tỉnh), SĐT VN, `vnp_Locale`, font hỗ trợ tiếng Việt | Test với DB thật: đơn COD #100001 (địa chỉ, SĐT chuẩn hoá, tổng 114.000₫), chặn phường sai tỉnh. Chưa test VNPay sandbox thật; chọn ngân hàng VNPay & MoMo để sau |
 | 28/09/2026 | 1.6 (tuỳ chọn): MoMo (tạo payment, IPN, return, migration enum) + chọn hình thức VNPay (`vnp_BankCode`) ở checkout | Đã gọi sandbox MoMo thật (key test công khai) → nhận `payUrl`; kiểm chữ ký IPN / redirect, chặn sửa số tiền. Chưa chạy trọn luồng thanh toán bằng app MoMo Test |
 | 28/09/2026 | Thêm key sandbox MoMo vào `.env.local`; thông báo checkout tự cuộn vào tầm nhìn; lên kế hoạch 2.8 (QR ngay trên site) | Trước đó bấm Đặt hàng không có phản hồi vì chưa có key cổng nào (lỗi hiện ở đầu trang, bị khuất) |
+| 28/09/2026 | 2.1: Auth.js v5 + Drizzle (email/mật khẩu scrypt + Google), trang đăng nhập / đăng ký / quên & đặt lại mật khẩu, `proxy.ts` bảo vệ `/account/*`, icon Account, trang `/account` tạm | UI dựng từ component sẵn có, chưa có Figma — cần duyệt. Đã kiểm tra: các trang trả 200, `/account` → `/login?callbackUrl=...`, hash mật khẩu. Chưa chạy migration `0002_add_auth` và luồng đăng ký/đăng nhập thật (Docker/Postgres chưa bật) |
+| 29/09/2026 | 2.2: trang tài khoản (thông tin cá nhân, đổi mật khẩu, lịch sử / chi tiết đơn, sổ địa chỉ), đơn gắn `user_id`, checkout tự điền địa chỉ mặc định, giỏ hàng lưu server + gộp khi đăng nhập | UI dựng từ component sẵn có, chưa có Figma — cần duyệt. Đã chạy migration 0002 + 0003; test với DB thật: các trang tài khoản khi đã đăng nhập, chặn xem đơn người khác, đơn khách chỉ hiện với email đã xác minh, gộp giỏ (1 + 2 = 3, không cộng trùng lần sau), chặn ghi giỏ của user khác |
+| 29/09/2026 | 2.3: tìm kiếm `/shop?q=...` (form header desktop + mobile), GROQ `match` trên tên / danh mục / phong cách / thương hiệu / màu / tag, trường `tags` trong Studio, dịch từ khoá tiếng Việt sang slug, xếp hạng theo tên | Không thêm UI mới. Test trên dev server với dữ liệu Sanity thật: "stripe" → 3, "áo thun đen" → 5, "jeans xanh dương" → 2, "hoodie" + sắp xếp giá, "áo sơ mi" + danh mục, từ khoá không tồn tại → 0 kèm thông báo; `/shop` không có `q` giữ nguyên |

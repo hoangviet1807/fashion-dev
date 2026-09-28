@@ -22,7 +22,7 @@ import {
   type PaymentMethodId,
   type VnpayMethodId,
 } from "@/lib/checkout/schema";
-import { PROVINCES, type Division } from "@/lib/address/provinces";
+import { PROVINCE_OPTIONS, toOptions, useWards } from "@/lib/address/use-wards";
 import { formatPrice } from "@/lib/money";
 import { refreshCart, submitCheckout } from "@/app/(site)/checkout/actions";
 import { Container } from "@/components/layout/Container";
@@ -35,47 +35,22 @@ import { OrderSummary } from "@/components/cart/OrderSummary";
 
 const FORM_ID = "checkout-form";
 
-const toOptions = (divisions: Division[]) =>
-  divisions.map((division) => ({ value: division.code, label: division.name }));
-
-const PROVINCE_OPTIONS = toOptions(PROVINCES);
-
-const wardCache = new Map<string, Division[]>();
-
-/** Loads a province's wards from the API; each province is fetched once per session. */
-function useWards(provinceCode: string) {
-  const [failed, setFailed] = useState<string | null>(null);
-  const [, setVersion] = useState(0);
-  const cached = provinceCode ? wardCache.get(provinceCode) : undefined;
-
-  useEffect(() => {
-    if (!provinceCode || wardCache.has(provinceCode)) return;
-    let active = true;
-    fetch(`/api/address/wards?province=${encodeURIComponent(provinceCode)}`)
-      .then((response) => (response.ok ? response.json() : Promise.reject()))
-      .then((wards: Division[]) => {
-        wardCache.set(provinceCode, wards);
-        if (active) setVersion((value) => value + 1);
-      })
-      .catch(() => {
-        if (active) setFailed(provinceCode);
-      });
-    return () => {
-      active = false;
-    };
-  }, [provinceCode]);
-
-  return {
-    wards: cached ?? [],
-    loading: Boolean(provinceCode) && !cached && failed !== provinceCode,
-  };
-}
+/** Prefilled from the signed-in account and its default address. */
+export type CheckoutDefaults = Partial<
+  Record<"email" | "phone" | "lastName" | "firstName" | "address" | "apartment" | "provinceCode" | "wardCode", string>
+>;
 
 function toLineInput(items: CartLine[]) {
   return items.map(({ sku, quantity }) => ({ sku, quantity }));
 }
 
-export function CheckoutView({ paymentFailed = false }: { paymentFailed?: boolean }) {
+export function CheckoutView({
+  paymentFailed = false,
+  defaults = {},
+}: {
+  paymentFailed?: boolean;
+  defaults?: CheckoutDefaults;
+}) {
   const router = useRouter();
   const hydrated = useCartHydrated();
   const items = useCartStore((state) => state.items);
@@ -84,8 +59,8 @@ export function CheckoutView({ paymentFailed = false }: { paymentFailed?: boolea
   const [shipping, setShipping] = useState<ShippingMethodId>("standard");
   const [payment, setPayment] = useState<PaymentMethodId>("vnpay");
   const [vnpayMethod, setVnpayMethod] = useState<VnpayMethodId>("any");
-  const [provinceCode, setProvinceCode] = useState("");
-  const [wardCode, setWardCode] = useState("");
+  const [provinceCode, setProvinceCode] = useState(defaults.provinceCode ?? "");
+  const [wardCode, setWardCode] = useState(defaults.wardCode ?? "");
   const { wards, loading: wardsLoading } = useWards(provinceCode);
   const wardOptions = useMemo(() => toOptions(wards), [wards]);
   const [errors, setErrors] = useState<CheckoutFieldErrors>({});
@@ -236,8 +211,8 @@ export function CheckoutView({ paymentFailed = false }: { paymentFailed?: boolea
               >
                 <Section title="Thông tin liên hệ">
                   <FieldGrid>
-                    <Field name="email" type="email" placeholder="Email" autoComplete="email" errors={errors} />
-                    <Field name="phone" type="tel" placeholder="Số điện thoại" autoComplete="tel" errors={errors} />
+                    <Field name="email" type="email" placeholder="Email" autoComplete="email" errors={errors} defaults={defaults} />
+                    <Field name="phone" type="tel" placeholder="Số điện thoại" autoComplete="tel" errors={errors} defaults={defaults} />
                   </FieldGrid>
                 </Section>
 
@@ -245,11 +220,11 @@ export function CheckoutView({ paymentFailed = false }: { paymentFailed?: boolea
 
                 <Section title="Địa chỉ giao hàng">
                   <FieldGrid>
-                    <Field name="lastName" placeholder="Họ" autoComplete="family-name" errors={errors} />
-                    <Field name="firstName" placeholder="Tên" autoComplete="given-name" errors={errors} />
+                    <Field name="lastName" placeholder="Họ" autoComplete="family-name" errors={errors} defaults={defaults} />
+                    <Field name="firstName" placeholder="Tên" autoComplete="given-name" errors={errors} defaults={defaults} />
                   </FieldGrid>
-                  <Field name="address" placeholder="Số nhà, tên đường" autoComplete="address-line1" errors={errors} />
-                  <Field name="apartment" placeholder="Toà nhà, căn hộ (không bắt buộc)" autoComplete="address-line2" errors={errors} />
+                  <Field name="address" placeholder="Số nhà, tên đường" autoComplete="address-line1" errors={errors} defaults={defaults} />
+                  <Field name="apartment" placeholder="Toà nhà, căn hộ (không bắt buộc)" autoComplete="address-line2" errors={errors} defaults={defaults} />
                   <FieldGrid>
                     <LocationSelect
                       name="provinceCode"
@@ -403,12 +378,14 @@ function Field({
   type = "text",
   autoComplete,
   errors,
+  defaults,
 }: {
-  name: CheckoutField;
+  name: CheckoutField & keyof CheckoutDefaults;
   placeholder: string;
   type?: "text" | "email" | "tel";
   autoComplete?: string;
   errors: CheckoutFieldErrors;
+  defaults: CheckoutDefaults;
 }) {
   const error = errors[name];
   return (
@@ -418,6 +395,7 @@ function Field({
         type={type}
         placeholder={placeholder}
         autoComplete={autoComplete}
+        defaultValue={defaults[name]}
         error={error}
       />
       {error ? (

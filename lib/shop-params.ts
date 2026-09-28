@@ -7,6 +7,7 @@ import {
   type CategoryId,
   type DressStyleId,
 } from "@/lib/catalog";
+import { normalizeSearchQuery } from "@/lib/search";
 import type { ProductSort } from "@/lib/types/product";
 
 export type ShopFacets = {
@@ -16,6 +17,7 @@ export type ShopFacets = {
 };
 
 export type ShopQuery = {
+  q?: string;
   style?: DressStyleId;
   category?: CategoryId;
   /** Set only after "Apply Filter"; color, size and price are applied together. */
@@ -42,13 +44,14 @@ function parsePrice(value: string | undefined): [number, number] | undefined {
 }
 
 export function parseShopParams(params: ShopSearchParams): ShopQuery {
+  const q = normalizeSearchQuery(first(params.q));
   const styleParam = first(params.style);
   const categoryParam = first(params.category);
   const category = isCategory(categoryParam) ? categoryParam : undefined;
-  // Default to casual only when browsing by style; category-only keeps all styles.
+  // Default to casual only when browsing by style; category-only and search keep all styles.
   const style = isDressStyle(styleParam)
     ? styleParam
-    : category
+    : category || q
       ? undefined
       : "casual";
 
@@ -68,11 +71,12 @@ export function parseShopParams(params: ShopSearchParams): ShopQuery {
   const sort = sortParam && SORTS.includes(sortParam) ? sortParam : "most-popular";
   const page = Math.max(1, Math.floor(Number(first(params.page)) || 1));
 
-  return { style, category, facets, sort, page };
+  return { q, style, category, facets, sort, page };
 }
 
 export function buildShopHref(query: Partial<ShopQuery>) {
   const params = new URLSearchParams();
+  if (query.q) params.set("q", query.q);
   if (query.style) params.set("style", query.style);
   if (query.category) params.set("category", query.category);
   if (query.facets) {

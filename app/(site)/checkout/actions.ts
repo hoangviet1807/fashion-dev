@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { z } from "zod";
+import { auth } from "@/auth";
 import { resolveAddress } from "@/lib/address/wards";
 import {
   PAYMENT_METHODS,
@@ -112,11 +113,13 @@ export async function submitCheckout(
   }
 
   try {
+    const session = await auth();
     const result = await placeOrder({
       details,
       location,
       quote,
       ipAddr: await clientIp(),
+      userId: session?.user?.id ?? null,
     });
     return result.status === "redirect"
       ? { status: "redirect", url: result.url }

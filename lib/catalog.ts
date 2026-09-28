@@ -61,7 +61,7 @@ export function colorSwatch(id: string): ColorSwatch {
   return SWATCHES.get(id) ?? { id, hex: "#000000", check: "white" };
 }
 
-const COLOR_LABELS: Record<string, string> = {
+export const COLOR_LABELS: Record<string, string> = {
   green: "Xanh lá",
   red: "Đỏ",
   yellow: "Vàng",

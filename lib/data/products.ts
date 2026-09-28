@@ -9,6 +9,7 @@ import {
 import type { SHOP_PRODUCTS_QUERY_RESULT } from "@/sanity.types";
 import { PLACEHOLDER_REVIEWS } from "@/lib/data/placeholder-reviews";
 import { discountPercent, sortSizes } from "@/lib/product";
+import { searchTerms } from "@/lib/search";
 import type {
   Product,
   ProductFilters,
@@ -47,10 +48,13 @@ export async function getProducts(
 ): Promise<ProductListing> {
   const pageSize = filters.pageSize ?? DEFAULT_PAGE_SIZE;
   const start = (Math.max(1, filters.page ?? 1) - 1) * pageSize;
+  const { terms, altTerms } = searchTerms(filters.q);
 
   const { data } = await sanityFetch({
     query: SHOP_PRODUCTS_QUERY,
     params: {
+      terms,
+      altTerms,
       category: filters.category ?? null,
       style: filters.style ?? null,
       color: filters.color ?? null,

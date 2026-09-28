@@ -103,6 +103,15 @@ export const productType = defineType({
       group: "main",
     }),
     defineField({
+      name: "tags",
+      type: "array",
+      group: "main",
+      description: "Extra search keywords, e.g. “áo thun”, “cotton”, “oversize”.",
+      of: [defineArrayMember({ type: "string" })],
+      options: { layout: "tags" },
+      validation: (rule) => rule.unique(),
+    }),
+    defineField({
       name: "popularity",
       type: "number",
       group: "main",

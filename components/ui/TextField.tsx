@@ -12,7 +12,7 @@ export function TextField({
 }: {
   icon?: string;
   placeholder: string;
-  type?: "text" | "email" | "search" | "tel";
+  type?: "text" | "email" | "search" | "tel" | "password";
   name?: string;
   required?: boolean;
   className?: string;

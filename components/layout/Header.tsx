@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
+import Form from "next/form";
 import Link from "next/link";
 import { Container } from "@/components/layout/Container";
 import { Logo } from "@/components/ui/Logo";
@@ -16,6 +17,15 @@ export function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
   const [mobileShopOpen, setMobileShopOpen] = useState(false);
+
+  function handleSearch(event: FormEvent<HTMLFormElement>) {
+    const q = new FormData(event.currentTarget).get("q");
+    if (typeof q !== "string" || !q.trim()) {
+      event.preventDefault();
+      return;
+    }
+    setSearchOpen(false);
+  }
 
   return (
     <header className="relative bg-white">
@@ -89,7 +99,12 @@ export function Header() {
           )}
         </nav>
 
-        <form className="hidden min-w-0 flex-1 lg:block" action="#new-arrivals">
+        <Form
+          action="/shop"
+          role="search"
+          className="hidden min-w-0 flex-1 lg:block"
+          onSubmit={handleSearch}
+        >
           <TextField
             icon="/icons/search.svg"
             placeholder="Tìm kiếm sản phẩm..."
@@ -97,7 +112,7 @@ export function Header() {
             name="q"
             className="w-full"
           />
-        </form>
+        </Form>
 
         <div className="ml-auto flex shrink-0 items-center gap-3">
           <IconButton
@@ -120,7 +135,7 @@ export function Header() {
             ) : null}
           </Link>
           <Link
-            href="#account"
+            href="/account"
             aria-label="Tài khoản"
             className="inline-flex size-6 shrink-0 overflow-clip"
           >
@@ -132,12 +147,14 @@ export function Header() {
 
       {searchOpen ? (
         <Container className="pb-4 lg:hidden">
-          <TextField
-            icon="/icons/search.svg"
-            placeholder="Tìm kiếm sản phẩm..."
-            type="search"
-            name="q"
-          />
+          <Form action="/shop" role="search" onSubmit={handleSearch}>
+            <TextField
+              icon="/icons/search.svg"
+              placeholder="Tìm kiếm sản phẩm..."
+              type="search"
+              name="q"
+            />
+          </Form>
         </Container>
       ) : null}
 

@@ -15,8 +15,18 @@ const PRODUCT_CARD = /* groq */ `
   "sizes": array::unique(variants[].size)
 `;
 
+// Flattened: `match` skips nested arrays.
+const SEARCH_FIELDS = /* groq */ `(
+  [name, category->title, category->slug.current, brand->name]
+  + coalesce(dressStyles[]->title, [])
+  + coalesce(dressStyles[]->slug.current, [])
+  + coalesce(variants[].color, [])
+  + coalesce(tags, [])
+)`;
+
 const SHOP_FILTER = /* groq */ `
   _type == "product" && defined(slug.current)
+  && (count($terms) == 0 || ${SEARCH_FIELDS} match $terms || ${SEARCH_FIELDS} match $altTerms)
   && (!defined($category) || category->slug.current == $category)
   && (!defined($style) || $style in dressStyles[]->slug.current)
   && (!defined($color) || $color in variants[].color)
@@ -27,8 +37,9 @@ const SHOP_FILTER = /* groq */ `
 
 export const SHOP_PRODUCTS_QUERY = defineQuery(`{
   "items": *[${SHOP_FILTER}]
+    | score(boost(name match $terms, 3), boost(name match $altTerms, 3))
     | order(
-        select($sort == "low-price" => price, $sort == "high-price" => -price, -popularity) asc,
+        select($sort == "low-price" => price, $sort == "high-price" => -price, -_score) asc,
         popularity desc
       )
     [$start...$end] { ${PRODUCT_CARD} },
