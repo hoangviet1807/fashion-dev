@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { IconButton } from "@/components/ui/IconButton";
+import type { Announcement } from "@/lib/data/content";
 
-export function AnnouncementBar() {
+export function AnnouncementBar({ text, linkLabel, linkHref }: Announcement) {
   const [open, setOpen] = useState(true);
 
   if (!open) return null;
@@ -11,10 +13,21 @@ export function AnnouncementBar() {
   return (
     <div className="relative flex h-[34px] items-center justify-center bg-black px-4 xl:h-[38px]">
       <p className="text-center text-xs text-white xl:text-sm">
-        Đăng ký để được giảm 20% cho đơn hàng đầu tiên.{" "}
-        <a href="#newsletter" className="font-medium underline">
-          Đăng ký ngay
-        </a>
+        {text}
+        {linkLabel && linkHref ? (
+          <>
+            {" "}
+            {linkHref.startsWith("/") ? (
+              <Link href={linkHref} className="font-medium underline">
+                {linkLabel}
+              </Link>
+            ) : (
+              <a href={linkHref} className="font-medium underline">
+                {linkLabel}
+              </a>
+            )}
+          </>
+        ) : null}
       </p>
       <IconButton
         src="/icons/close.svg"

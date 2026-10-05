@@ -3,6 +3,7 @@ import { brandType } from "./brand";
 import { categoryType } from "./category";
 import { dressStyleType } from "./dressStyle";
 import { faqType } from "./faq";
+import { pageType } from "./page";
 import { productType } from "./product";
 import { productVariantType } from "./productVariant";
 import { siteSettingsType } from "./siteSettings";
@@ -19,6 +20,7 @@ export const schema: { types: SchemaTypeDefinition[] } = {
     dressStyleType,
     brandType,
     testimonialType,
+    pageType,
     siteSettingsType,
   ],
 };

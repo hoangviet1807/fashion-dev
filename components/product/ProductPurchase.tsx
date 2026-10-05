@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
+import { STEPPER_BUTTON, chipClasses, swatchClasses } from "@/components/ui/choice";
 import { useCartQuantity, useCartStore } from "@/lib/cart/store";
 import { colorLabel, colorSwatch } from "@/lib/catalog";
 import { productColors, productSizes } from "@/lib/product";
@@ -57,7 +58,7 @@ export function ProductPurchase({ product }: { product: Product }) {
                 aria-label={colorLabel(swatch.id)}
                 aria-pressed={selected}
                 onClick={() => setColor(swatch.id)}
-                className="flex size-[37px] items-center justify-center rounded-full border border-black/20 xl:size-[39px]"
+                className={`size-[37px] xl:size-[39px] ${swatchClasses(selected)}`}
                 style={{ backgroundColor: swatch.hex }}
               >
                 {selected ? (
@@ -86,11 +87,7 @@ export function ProductPurchase({ product }: { product: Product }) {
                 type="button"
                 aria-pressed={selected}
                 onClick={() => setSize(item)}
-                className={`inline-flex h-[40px] items-center justify-center rounded-[62px] px-5 text-sm xl:h-[46px] xl:px-6 xl:text-base ${
-                  selected
-                    ? "bg-black font-medium text-white"
-                    : "bg-muted text-text-60"
-                }`}
+                className={`h-[40px] px-5 text-sm xl:h-[46px] xl:px-6 xl:text-base ${chipClasses(selected)}`}
               >
                 {item}
               </button>
@@ -107,7 +104,8 @@ export function ProductPurchase({ product }: { product: Product }) {
             type="button"
             aria-label="Giảm số lượng"
             onClick={() => setQty(Math.max(1, qty - 1))}
-            className="text-xl leading-none"
+            disabled={qty <= 1}
+            className={STEPPER_BUTTON}
           >
             −
           </button>
@@ -117,7 +115,7 @@ export function ProductPurchase({ product }: { product: Product }) {
             aria-label="Tăng số lượng"
             onClick={() => setQty(Math.min(qty + 1, Math.max(1, available)))}
             disabled={qty >= available}
-            className="text-xl leading-none"
+            className={STEPPER_BUTTON}
           >
             +
           </button>

@@ -9,7 +9,7 @@
 |---|---|---|---|
 | 1 | Luồng mua hàng cơ bản | 6–10 ngày | ✅ Xong |
 | 2 | Tài khoản & trải nghiệm | 5–7 ngày | 🟨 Đang làm |
-| 3 | Vận hành & hoàn thiện | 5+ ngày | ⬜ Chưa bắt đầu |
+| 3 | Vận hành & hoàn thiện | 5+ ngày | 🟨 Đang làm |
 
 Ký hiệu: ⬜ Chưa bắt đầu · 🟨 Đang làm · ✅ Xong · 🎨 Có UI mới (cần duyệt)
 
@@ -44,11 +44,11 @@ Ký hiệu: ⬜ Chưa bắt đầu · 🟨 Đang làm · ✅ Xong · 🎨 Có UI
 - [ ] Nút Add to Cart (`components/product/ProductPurchase.tsx`)
 - [x] Search (`components/layout/Header.tsx`)
 - [x] Go to Checkout (`components/cart/OrderSummary.tsx`)
-- [ ] Promo code (luôn giảm cứng 20% — `lib/cart-data.ts`)
-- [ ] Newsletter (`components/layout/NewsletterBanner.tsx`)
+- [x] Promo code (bảng `coupons`, 2.4)
+- [x] Newsletter (`components/layout/NewsletterBanner.tsx`, 2.6)
 - [x] Icon Account (link `/account`)
-- [ ] Reviews: Write / Load More / Sort (`components/product/ProductTabs.tsx`)
-- [ ] Link nav On Sale / New Arrivals / Brands, link footer
+- [x] Reviews: Write / Load More / Sort (`components/product/ProductReviews.tsx`, 2.5)
+- [x] Link nav On Sale / New Arrivals / Brands, link footer
 - [ ] Số lượng trên icon giỏ hàng
 
 ---
@@ -132,45 +132,60 @@ Ký hiệu: ⬜ Chưa bắt đầu · 🟨 Đang làm · ✅ Xong · 🎨 Có UI
 - [ ] (Tuỳ chọn) Algolia / Meilisearch
 - **Lưu ý:** `match` phân biệt dấu ("ao" không khớp "áo"); từ chung chung như "áo" / "quần" đứng một mình không lọc được gì
 
-### 2.4 Mã giảm giá
-- [ ] Bảng `coupons` (phần trăm / cố định, đơn tối thiểu, hạn dùng, số lượt)
-- [ ] Server action `applyPromo`; bỏ giảm cứng 20% trong `lib/cart-data.ts`
-- [ ] Nối form promo trong `OrderSummary.tsx`
+### 2.4 Mã giảm giá ✅
+- [x] Bảng `coupons` (migration `0004_add_coupons`, đã chạy): `percent` / `fixed`, `min_subtotal`, `max_discount` (trần cho mã %), `starts_at` / `expires_at`, `usage_limit`, `active`; mã lưu chữ hoa, có CHECK ràng buộc giá trị. `orders.coupon_id` + `coupon_code`. Số lượt **đếm từ đơn hàng** (đã thanh toán / COD / chờ thanh toán trong 15 phút giữ chỗ) nên đơn thất bại hoặc bỏ dở tự trả lượt. Tạo mã: `pnpm coupon:create SALE20 --percent 20 --max 100000 --min 300000 --expires 2026-12-31 --limit 100` (`--fixed 50000`, `--disable`), hoặc `pnpm db:studio`
+- [x] Server action `applyPromo` (`app/(site)/cart/actions.ts`) kiểm mã trên tạm tính tính lại từ Sanity; logic ở `lib/coupons/server.ts`, tính tiền dùng chung client/server ở `lib/coupons/discount.ts`. Bỏ giảm cứng 20%. `quoteCart` kiểm lại mã ở checkout (mã hết hạn / dưới mức tối thiểu → gỡ mã + thông báo); `placeOrder` giữ lượt trong transaction với advisory lock theo mã → không vượt `usage_limit` khi đặt đồng thời
+- [x] Nối form promo trong `OrderSummary.tsx`: mã lưu trong giỏ (Zustand) nên mang từ giỏ sang checkout; lỗi hiện dưới ô nhập; khi đã áp dụng nút đổi thành "Gỡ mã". Dòng "Giảm giá (MÃ · -20%)" chỉ hiện khi có mã; mã hiện trong chi tiết đơn + email xác nhận
+- **Lưu ý:** chưa có rate limit cho `applyPromo` (3.4); chưa giới hạn số lần dùng / khách
 
-### 2.5 Reviews
-- [ ] Bảng `reviews` (chỉ người đã mua mới được viết)
-- [ ] Nối Write a Review / Load More / Sort trong `ProductTabs.tsx`
-- [ ] Rating trung bình tính từ dữ liệu thật
+### 2.5 🎨 Reviews ✅ (chờ duyệt UI form viết đánh giá)
+- [x] Bảng `reviews` (migration `0005_add_reviews`, đã chạy): theo `product_slug` (giống `order_items`), `rating` 1–5 (CHECK), `content`, `order_id` của đơn đủ điều kiện; mỗi user 1 đánh giá / sản phẩm (unique), viết lại = sửa. Chỉ người đã mua mới được viết: đơn của user (hoặc đơn khách cùng email đã xác minh, dùng chung `ownedBy`) ở trạng thái đã xác nhận (`CONFIRMED_ORDER_STATUSES`: đã thanh toán / COD / đang giao / hoàn tất) có sản phẩm đó. Logic ở `lib/reviews/server.ts`, schema Zod + kiểu dùng chung client/server ở `lib/reviews/shared.ts`
+- [x] Server actions `app/(site)/product/[slug]/actions.ts`: `loadReviews` (sắp xếp mới nhất / cũ nhất / sao cao / sao thấp, lọc theo số sao, 6 đánh giá / trang), `getReviewEligibility`, `submitReview` (kiểm lại quyền + Zod ở server)
+- [x] Nối tab Đánh giá (`components/product/ProductReviews.tsx`, thay danh sách mẫu `placeholder-reviews.ts` đã xoá): nút "Mới nhất" và icon lọc giữ nguyên giao diện, bên dưới là `<select>` trong suốt (sắp xếp chỉ hiện từ `sm` như thiết kế; lọc sao dùng được cả mobile; tiêu đề đổi thành "Đánh giá N sao (x)" khi lọc). "Xem thêm đánh giá" tải trang kế, ẩn khi hết. "Viết đánh giá": chưa đăng nhập → `/login?callbackUrl=...`; chưa mua → thông báo; đủ điều kiện → 🎨 form ngay trong tab (chọn 1–5 sao, nội dung 10–1000 ký tự, hiển thị tên trong hồ sơ; đã viết thì điền sẵn để sửa), dựng từ style card đánh giá / `Button` / `FormNotice`. Chưa có đánh giá → dòng "Chưa có đánh giá nào…"
+- [x] Rating trung bình tính từ dữ liệu thật: trang sản phẩm đọc trung bình + số lượng + trang đầu từ Postgres (`unstable_cache`, tag `reviews:<slug>`, xoá cache khi gửi đánh giá; DB lỗi → vẫn hiện trang với rating Sanity). Gửi đánh giá → ghi `rating` / `reviewCount` vào Sanity (published + draft) để card / danh sách cũng đúng; hai trường này chuyển sang chỉ đọc trong Studio, seed không ghi nữa. `pnpm reviews:sync [slug...]` tính lại từ DB. `Rating` làm tròn tới nửa sao (thêm 1–2,5 sao bằng cách cắt `stars-50.svg`), 0 → "Chưa có đánh giá" (giữ chiều cao dòng)
+- **Cần làm:** chạy `pnpm reviews:sync` một lần để xoá rating mẫu (4,5 / 451 đánh giá…) còn trong Sanity — sau đó mọi sản phẩm chưa có đánh giá sẽ hiện "Chưa có đánh giá" trên card
+- **Lưu ý:** đổi slug sản phẩm trong Studio sẽ tách đánh giá cũ (khoá theo slug như `order_items`); xoá đánh giá ở `/admin/reviews` (3.1), chưa có duyệt trước khi hiển thị
 
-### 2.6 Email & newsletter
-- [ ] Email xác nhận đơn, đang giao, reset mật khẩu
-- [ ] Newsletter lưu email + chống spam + rate limit
+### 2.6 Email & newsletter ✅
+- [x] Email xác nhận đơn, đang giao, reset mật khẩu. Gửi chung qua `lib/email/send.ts` (không có `RESEND_API_KEY` thì log ra console). Email đơn hàng ở `lib/email/order-notifications.ts`: mỗi loại gửi đúng 1 lần/đơn (giữ chỗ cột `confirmation_sent_at` / `shipping_notified_at`, lỗi thì nhả để gửi lại). Trạng thái mới `shipped` ("Đang giao") + cột `carrier`, `tracking_number`, `shipped_at`; `lib/orders/fulfillment.ts` (`markOrderShipped` / `markOrderDelivered`, dùng lại cho admin 3.1). Tạm thời cập nhật bằng CLI: `pnpm order:ship 100001 --carrier GHN --tracking GHN123` (→ Đang giao + email, chạy lại chỉ cập nhật mã vận đơn), `pnpm order:ship 100001 --delivered` (→ Hoàn tất). Email "đang giao" có đơn vị vận chuyển, mã vận đơn, số tiền cần trả nếu COD. Đơn `shipped` vẫn tính là đã mua (review, lượt dùng mã)
+- [x] Newsletter: bảng `newsletter_subscribers` (email chữ thường, `pending` → `subscribed` → `unsubscribed`). Double opt-in: form gọi server action `subscribeNewsletter` (`app/(site)/newsletter/actions.ts`) → email xác nhận (token 48 giờ, chỉ lưu SHA-256) → `/api/newsletter/confirm` → email chào mừng có link huỷ + header `List-Unsubscribe` (one-click POST theo RFC 8058) → `/api/newsletter/unsubscribe`. Kết quả hiện ngay dưới form (`?newsletter=confirmed|unsubscribed|invalid`, tự xoá khỏi URL)
+- [x] Chống spam: ô honeypot ẩn, chặn gửi trong 1,5 giây đầu, luôn trả cùng một thông báo (không dò được email đã đăng ký), không gửi lại email xác nhận trong 60 giây. Rate limit dùng chung `lib/rate-limit.ts` (bảng `rate_limits`, cửa sổ cố định, khoá băm SHA-256, chạy được nhiều instance): 5 lần / 10 phút / IP, tối đa 3 email xác nhận / ngày / địa chỉ. `clientIp()` chuyển sang `lib/request.ts`
+- Migration `0006_add_newsletter_shipping` (đã chạy)
+- **Lưu ý:** chưa có công cụ gửi bản tin hàng loạt (danh sách nằm ở bảng `newsletter_subscribers`, `status = 'subscribed'`); mã vận đơn đã hiện trong chi tiết đơn trên site từ 3.1
 
-### 2.7 Sửa link chết
-- [ ] On Sale → `/shop?sale=1`
-- [ ] New Arrivals → `/shop?sort=newest`
-- [ ] Brands → `/brands` hoặc bộ lọc thương hiệu
-- [ ] Trang nội dung từ Sanity (`app/[slug]/page.tsx`): About, FAQ, Shipping, Returns, Privacy, Terms
-- [ ] Cập nhật link footer
+### 2.7 Sửa link chết ✅
+- [x] On Sale → `/shop?sale=1` (sản phẩm có `compareAtPrice > price` hoặc `discount > 0`; tiêu đề "Khuyến mãi")
+- [x] New Arrivals → `/shop?sort=newest` (sắp xếp theo `_createdAt`, thêm lựa chọn "Mới nhất" vào ô sắp xếp; tiêu đề "Hàng mới về")
+- [x] Brands → bộ lọc thương hiệu `/shop?brand=<slug>` (trường `slug` mới trong schema `brand`). Link nav "Thương hiệu" → `/#brands` (thanh logo ở trang chủ), mỗi logo dẫn tới `/shop?brand=...`; tiêu đề là tên thương hiệu. Không làm trang `/brands` riêng (sẽ là UI mới). `pnpm migrate:brands` (đã chạy) gán slug cho thương hiệu + thương hiệu mẫu cho 14 sản phẩm (`PRODUCT_BRANDS` trong `scripts/seed-data.ts`, chỉ sản phẩm chưa có thương hiệu)
+- [x] `sale` / `brand` kết hợp được với tìm kiếm, danh mục, phong cách, bộ lọc, phân trang. Mặc định "Thường ngày" chỉ áp dụng cho `/shop` không có phạm vi nào và sắp xếp mặc định
+- [x] 🎨 Trang nội dung từ Sanity `app/(site)/[slug]/page.tsx` (schema `page`: title, slug, description, body Portable Text — `components/content/PageBody.tsx`, dựng từ style trang tài khoản). `pnpm seed:pages` (đã chạy) tạo 6 trang tiếng Việt: `/gioi-thieu`, `/cau-hoi-thuong-gap`, `/giao-hang`, `/doi-tra`, `/chinh-sach-bao-mat`, `/dieu-khoan` (không ghi đè trang đã có). Slug không tồn tại → 404; tag revalidate `page` / `page:<slug>`
+- [x] Link footer: 4 cột Công ty / Hỗ trợ / Tài khoản / Danh mục trỏ tới route thật (`footerColumns` trong `lib/home-data.ts`, dùng `next/link`)
+- **Lưu ý:** nội dung trang (chính sách đổi trả 7 ngày, hoàn tiền 5–7 ngày…) là nội dung mẫu — cần biên tập lại trong Studio cho đúng chính sách thật. Khi deploy, thêm `"page"` vào filter webhook revalidate
 
-### 2.8 🎨 Thanh toán QR ngay trên site
+### 2.8 🎨 Thanh toán QR ngay trên site ✅ (chờ duyệt UI)
 Hiện VNPay / MoMo chuyển khách sang trang của cổng để quét QR. Mục tiêu: sau khi bấm Đặt hàng, hiện mã QR ngay trong app và tự chuyển sang trang thành công khi nhận tiền.
-- [ ] Chốt cách làm: chuyển khoản VietQR qua payOS / SePay (tiền vào thẳng tài khoản ngân hàng, phí thấp, khách quét bằng mọi app ngân hàng) hay QR MoMo `qrCodeUrl` (production cần MoMo cấp quyền)
-- [ ] Nhà cung cấp mới trong `lib/payments/` (tạo link / QR, kiểm chữ ký webhook) + thêm giá trị vào enum `payment_method` (migration)
-- [ ] Webhook nhận tiền → dùng lại xử lý chung ở `lib/orders/payments.ts` (đối chiếu số tiền, idempotent, trừ kho, gửi email)
-- [ ] 🎨 Trang `/order/[id]/pay`: mã QR, số tiền, nội dung chuyển khoản, số tài khoản, đồng hồ đếm ngược 15 phút (khớp giữ chỗ tồn kho); cần UI được duyệt
-- [ ] Trang tự kiểm tra trạng thái đơn (polling hoặc SSE) → chuyển tới `/order/[id]/success` khi đã thanh toán; hết hạn → nhả giữ chỗ, cho đặt lại
-- [ ] Thêm lựa chọn "Chuyển khoản ngân hàng (VietQR)" ở checkout
-- **Trước khi làm:** điền key sandbox VNPay (`VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET`) để test cả hai cổng hiện có; `.env.local` mới có key sandbox MoMo công khai.
+- [x] Chốt cách làm: **payOS** (chuyển khoản VietQR, tiền vào thẳng tài khoản ngân hàng, khách quét bằng mọi app ngân hàng)
+- [x] `lib/payments/payos.ts` (gọi REST trực tiếp, không SDK): tạo link (ký HMAC-SHA256, `expiredAt` = hạn giữ chỗ), đọc trạng thái, huỷ link, kiểm chữ ký webhook. Enum `payment_method` thêm `payos`; `payments.transfer` (QR + số tài khoản + nội dung) và `payments.expires_at` (migration `0007_add_payos_payment`, đã chạy). `orderCode` = số đơn + 4 chữ số ngẫu nhiên (payOS yêu cầu số, không trùng kể cả khi DB reset); nội dung chuyển khoản `DH<số đơn>` (≤ 9 ký tự)
+- [x] Webhook `app/api/webhooks/payos` → `handlePayosWebhook` dùng lại `applyPaymentResult` ở `lib/orders/payments.ts` (đối chiếu số tiền, idempotent, trừ kho, gửi email). Tiền về sau khi đơn đã huỷ / hết hạn → log để hoàn tiền tay. `abandonPayment` giờ chỉ đổi payment còn `pending` (không ghi đè thanh toán vừa thành công)
+- [x] 🎨 Trang `/order/[id]/pay` (`components/order/BankTransferView.tsx`, dựng từ style sẵn có): mã QR (SVG từ `qrcode`), ngân hàng (tra BIN ở `lib/payments/vietqr-banks.ts`), chủ tài khoản, số tài khoản / số tiền / nội dung kèm nút "Sao chép", đồng hồ đếm ngược 15 phút, nút "Mở trang thanh toán payOS" (cho điện thoại) và "Đổi phương thức thanh toán" (huỷ link, nhả kho, quay lại checkout); bên dưới dùng lại `OrderDetails`
+- [x] Polling 4 giây `GET /api/orders/[id]/payment` → `syncPayosPayment`: hỏi thẳng payOS nên chạy được cả khi chưa có webhook công khai (local); `PAID` → `/order/[id]/success`; hết hạn / link bị huỷ → huỷ link payOS, nhả giữ chỗ, hiện "Thanh toán đã hết hạn" + nút "Đặt hàng lại" (giỏ vẫn còn). Đơn payOS chưa trả mở `/success` → chuyển về `/pay`
+- [x] Lựa chọn "Chuyển khoản ngân hàng (VietQR)" ở checkout (thiếu key → báo lỗi, gợi ý chọn phương thức khác)
+- **Để chạy thật cần:** `PAYOS_CLIENT_ID`, `PAYOS_API_KEY`, `PAYOS_CHECKSUM_KEY` (my.payos.vn → Kênh thanh toán, liên kết tài khoản ngân hàng); khai báo webhook `https://<domain>/api/webhooks/payos` trong dashboard payOS. VNPay vẫn cần key sandbox để test
 
 ---
 
 ## Giai đoạn 3 — Vận hành & hoàn thiện
 
-### 3.1 Admin
-- [ ] Sản phẩm / nội dung / banner qua Sanity Studio
-- [ ] 🎨 `/admin` (phân quyền theo role): danh sách đơn, đổi trạng thái, mã vận đơn, hoàn tiền
-- [ ] Cảnh báo sắp hết hàng
+### 3.1 Admin ✅ (chờ duyệt UI `/admin`)
+- [x] Sản phẩm / nội dung / banner qua Sanity Studio: Studio chia nhóm (Site settings → Products + **Low stock (≤ 5)** → Category / Dress style / Brand → Page / Testimonial); preview sản phẩm hiện số biến thể sắp hết. Banner = thanh thông báo trên header, sửa ở Site settings → tab *Announcement banner* (bật/tắt, nội dung, nhãn + link `/…`, `#…` hoặc `https://…`); để trống → giữ câu mặc định "Đăng ký để được giảm 20%…" (giao diện không đổi). `SiteShell` đọc qua `getAnnouncement()` (tag `siteSettings`)
+- [x] 🎨 `/admin` (dựng từ style trang tài khoản, nằm trong `app/(site)/admin`): cột `users.role` (`customer` / `staff` / `admin`, migration `0008_add_admin`, đã chạy). Cấp quyền: `pnpm user:role email@x.com admin|staff|customer`, `pnpm user:role --list`. Quyền ở `lib/admin/roles.ts` — **staff**: xem đơn, giao hàng, huỷ đơn, tồn kho, xoá đánh giá; **admin**: thêm hoàn tiền. Role đọc từ DB mỗi request (`lib/admin/auth.ts`, không nằm trong JWT) nên cấp / thu hồi có hiệu lực ngay; `proxy.ts` chặn khách chưa đăng nhập, user không đủ quyền → 404. Link "Quản trị" chỉ hiện trong thanh tab tài khoản của staff/admin
+  - `/admin/orders`: lọc Cần xử lý (mặc định, cũ nhất trước) / Đang giao / Hoàn tất / Chờ thanh toán / Đã huỷ – thất bại / Tất cả kèm số lượng; tìm theo số đơn, email, SĐT, tên khách; 20 đơn / trang
+  - `/admin/orders/[id]`: **Vận chuyển** (đơn vị + mã vận đơn → Đang giao + email 1 lần, sửa lại chỉ cập nhật mã), **Đánh dấu đã giao** (đơn COD được ghi `paid_at` khi hoàn tất), **Huỷ đơn** (lý do, tuỳ chọn nhập lại kho — mặc định bật, tắt sẵn nếu đơn đã giao đi; chỉ huỷ được đơn đã xác nhận, đơn chờ thanh toán online tự hết hạn), **Hoàn tiền** (chỉ admin; đơn đã thanh toán online hoặc COD đã hoàn tất; nhiều lần, tổng không vượt tổng đơn — khoá dòng đơn khi ghi). Danh sách giao dịch, lịch sử thao tác (bảng `order_events`: ai làm, lúc nào), chi tiết đơn
+  - Logic ở `lib/orders/fulfillment.ts` (`markOrderShipped` / `markOrderDelivered` / `cancelOrder` / `recordRefund`, dùng chung với `pnpm order:ship`); nhập lại kho `restockOrder` (`lib/orders/inventory.ts`) cộng lại Sanity cho các giữ chỗ `committed` rồi chuyển `released` → chạy lại không cộng 2 lần
+  - `/admin/reviews`: đánh giá mới nhất, lọc 1–2 sao / ≤ 3 sao, xoá (tính lại điểm trung bình + đồng bộ Sanity, xoá cache trang sản phẩm)
+  - Phía khách: chi tiết đơn hiện đơn vị vận chuyển + mã vận đơn và dòng "Đã hoàn tiền" (nếu có)
+- [x] Cảnh báo sắp hết hàng: ngưỡng `NEXT_PUBLIC_LOW_STOCK_THRESHOLD` (mặc định 5, `lib/inventory/threshold.ts`, dùng chung site + Studio). Khi trừ kho sau đơn hàng, biến thể vừa tụt từ trên ngưỡng xuống ≤ ngưỡng → email "Sắp hết hàng" (`lib/email/LowStockEmail.tsx`) tới `ADMIN_ALERT_EMAILS` (hoặc mọi tài khoản admin) — mỗi lần tụt ngưỡng gửi 1 lần. Trang `/admin/inventory`: biến thể ≤ ngưỡng, tồn kho / đang giữ (đơn chưa trả xong) / còn bán được, link mở thẳng sản phẩm trong Studio
+- **Lưu ý:** hoàn tiền **chỉ ghi nhận** — tiền phải trả qua cổng quản trị VNPay / MoMo, chuyển khoản lại (payOS) hoặc tiền mặt (COD) trước; chưa gọi API hoàn tiền của cổng. Huỷ đơn chưa gửi email cho khách. Trang admin nằm trong khung site (header / newsletter / footer) để dùng lại style — cần duyệt. Studio vẫn đăng nhập bằng tài khoản Sanity riêng (mời biên tập viên trong sanity.io/manage)
 
 ### 3.2 🎨 Wishlist
 - [ ] `localStorage` cho khách, lưu DB khi đã đăng nhập
@@ -212,3 +227,9 @@ Hiện VNPay / MoMo chuyển khách sang trang của cổng để quét QR. Mụ
 | 28/09/2026 | 2.1: Auth.js v5 + Drizzle (email/mật khẩu scrypt + Google), trang đăng nhập / đăng ký / quên & đặt lại mật khẩu, `proxy.ts` bảo vệ `/account/*`, icon Account, trang `/account` tạm | UI dựng từ component sẵn có, chưa có Figma — cần duyệt. Đã kiểm tra: các trang trả 200, `/account` → `/login?callbackUrl=...`, hash mật khẩu. Chưa chạy migration `0002_add_auth` và luồng đăng ký/đăng nhập thật (Docker/Postgres chưa bật) |
 | 29/09/2026 | 2.2: trang tài khoản (thông tin cá nhân, đổi mật khẩu, lịch sử / chi tiết đơn, sổ địa chỉ), đơn gắn `user_id`, checkout tự điền địa chỉ mặc định, giỏ hàng lưu server + gộp khi đăng nhập | UI dựng từ component sẵn có, chưa có Figma — cần duyệt. Đã chạy migration 0002 + 0003; test với DB thật: các trang tài khoản khi đã đăng nhập, chặn xem đơn người khác, đơn khách chỉ hiện với email đã xác minh, gộp giỏ (1 + 2 = 3, không cộng trùng lần sau), chặn ghi giỏ của user khác |
 | 29/09/2026 | 2.3: tìm kiếm `/shop?q=...` (form header desktop + mobile), GROQ `match` trên tên / danh mục / phong cách / thương hiệu / màu / tag, trường `tags` trong Studio, dịch từ khoá tiếng Việt sang slug, xếp hạng theo tên | Không thêm UI mới. Test trên dev server với dữ liệu Sanity thật: "stripe" → 3, "áo thun đen" → 5, "jeans xanh dương" → 2, "hoodie" + sắp xếp giá, "áo sơ mi" + danh mục, từ khoá không tồn tại → 0 kèm thông báo; `/shop` không có `q` giữ nguyên |
+| 06/10/2026 | 2.4: bảng `coupons` + migration 0004, `applyPromo`, kiểm lại mã ở checkout, giữ lượt khi đặt đơn (advisory lock), form promo trong `OrderSummary`, script `pnpm coupon:create`; bỏ giảm cứng 20% | Không thêm UI mới (dòng giảm giá chỉ hiện khi có mã, lỗi dưới ô nhập, nút "Gỡ mã"). Test với DB + Sanity thật: % có trần, cố định không vượt tạm tính, chưa đủ tối thiểu / hết hạn / chưa bắt đầu / không tồn tại, đơn thất bại & đơn chờ quá 15 phút không tính lượt, 2 đơn tranh lượt cuối → 1 thành công. Chưa test trên trình duyệt (Playwright không cài được Chrome). Mã mẫu trong DB local: `SALE20`, `GIAM30K`, `HETHAN`, `SAPTOI` |
+| 06/10/2026 | 2.5: bảng `reviews` + migration 0005, chỉ người đã mua được viết (1 đánh giá / sản phẩm, sửa được), server actions tải / kiểm quyền / gửi, nối sắp xếp / lọc sao / xem thêm / viết đánh giá, rating trung bình từ Postgres + đồng bộ sang Sanity, `pnpm reviews:sync` | 🎨 Form viết đánh giá dựng từ style sẵn có — cần duyệt. Test với DB + Sanity thật qua HTTP (gọi server action với phiên đăng nhập thật): khách → yêu cầu đăng nhập, user chưa mua / sản phẩm khác → từ chối, rating 0 / 9 & nội dung ngắn → lỗi, gửi → lưu + Sanity `bermuda` 4 (1), gửi lại → sửa thành 3 (1); 9 đánh giá: 4 kiểu sắp xếp, lọc 5★ → 3 / 1★ → 1, trang 2 → 3 còn lại, `pnpm reviews:sync bermuda` → 3.6 (9). Dữ liệu test đã xoá, `bermuda` về 0. Chưa xem trên trình duyệt; chưa chạy `pnpm reviews:sync` cho toàn bộ catalog |
+| 06/10/2026 | 2.7: nav Khuyến mãi (`sale=1`) / Hàng mới về (`sort=newest`) / Thương hiệu (`/#brands`, logo → `brand=<slug>`), schema `page` + route `/[slug]` + 6 trang nội dung, footer trỏ route thật; `pnpm migrate:brands`, `pnpm seed:pages` (đã chạy) | 🎨 Trang nội dung dựng từ style sẵn có, chưa có Figma — cần duyệt; thêm option "Mới nhất" vào ô sắp xếp; footer đổi nhãn cột/link. Test trên dev server với Sanity thật: sale → 6 sp đang giảm, newest → `one-life` đầu tiên, `brand=gucci` → 2, `brand=zara&sale=1` → 2, thương hiệu không tồn tại → 0, 6 trang trả 200, slug lạ → 404, `/login` không bị ảnh hưởng. Chưa xem trên trình duyệt (thiếu Chrome cho Playwright) |
+| 06/10/2026 | 2.6: trạng thái `shipped` + email "đang giao" (`pnpm order:ship`), gom gửi email vào `lib/email/send.ts`, newsletter double opt-in (bảng `newsletter_subscribers`, xác nhận / chào mừng / huỷ đăng ký one-click), honeypot + chặn gửi quá nhanh, rate limit Postgres (`lib/rate-limit.ts`), migration 0006 | Form newsletter giữ nguyên layout; chỉ thêm 1 dòng thông báo dưới nút (desktop nằm trong khoảng đệm, card vẫn cao 180px). Test với DB thật + trình duyệt Edge (Playwright qua `channel: "msedge"`): email sai / gửi quá nhanh / hợp lệ (lưu chữ thường, `pending`), link xác nhận dùng 1 lần, đã đăng ký / trong 60 giây không gửi lại, huỷ qua GET + POST, đăng ký lại giữ token huỷ, IP bị chặn ở lần thứ 6 kèm thông báo; CLI giao hàng: gửi email 1 lần, chạy lại chỉ cập nhật mã vận đơn, chặn chuyển trạng thái sai. Đơn #100001 đã trả về trạng thái cũ, dữ liệu test đã xoá |
+| 06/10/2026 | 2.8: chuyển khoản VietQR qua payOS — `lib/payments/payos.ts`, migration 0007 (enum `payos`, `payments.transfer` / `expires_at`), webhook `/api/webhooks/payos`, trang `/order/[id]/pay` (QR, sao chép, đếm ngược, polling, hết hạn / đổi phương thức), lựa chọn mới ở checkout | 🎨 Trang `/pay` dựng từ style sẵn có, chưa có Figma — cần duyệt. Chưa có key payOS thật: test với mock API payOS (cùng thuật toán ký) + build production + Edge (Playwright `channel: "msedge"`): đặt hàng → trang QR; payOS báo PAID qua polling → success (đã trừ kho, gửi email); webhook sai chữ ký → 400, đúng → paid, gửi lại → không xử lý lần 2; sai số tiền → giữ chờ; quá hạn → `payment_failed` + nhả kho + màn hình hết hạn; đổi phương thức → huỷ + nhả kho, giỏ còn nguyên; `/success` của đơn chưa trả → về `/pay`; desktop + mobile 390px. Đơn test #100009–100015 còn trong DB local; tồn kho Sanity `GRADIENT-TEE-WHITE-M` đã cộng lại 2 |
+| 06/10/2026 | 3.1: role `customer` / `staff` / `admin` (`pnpm user:role`), bảng `refunds` + `order_events` (migration 0008), `/admin` (đơn hàng: lọc / tìm / giao hàng / hoàn tất / huỷ + nhập lại kho / hoàn tiền / lịch sử; tồn kho; đánh giá), email cảnh báo sắp hết hàng, banner thông báo sửa trong Studio, Studio chia nhóm + danh sách Low stock; khách thấy mã vận đơn + số tiền đã hoàn | 🎨 `/admin` dựng từ style trang tài khoản — cần duyệt. Test với DB + Sanity thật (19 kiểm tra logic): trừ kho làm biến thể tụt ngưỡng → email cảnh báo, giao hàng gửi email 1 lần, hoàn tiền vượt tổng / vượt phần còn lại bị chặn, huỷ + nhập lại kho đưa tồn kho về đúng 22, chạy lại không cộng 2 lần, COD chỉ hoàn tiền được sau khi hoàn tất. HTTP (17): khách chưa đăng nhập → login, customer → 404, staff không thấy form hoàn tiền, tìm theo số / email / tên. Edge (Playwright `channel: "msedge"`, 11): giao hàng / hoàn tiền / huỷ / hoàn tất COD qua form, lỗi hiện đúng chỗ, mobile 390px không tràn ngang. Dữ liệu test đã xoá, tồn kho Sanity không đổi |

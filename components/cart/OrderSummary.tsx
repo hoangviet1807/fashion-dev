@@ -1,11 +1,11 @@
 "use client";
 
-import { FormEvent } from "react";
-import {
-  CART_DISCOUNT_PERCENT,
-  DELIVERY_FEE,
-} from "@/lib/cart-data";
+import { FormEvent, useState, useTransition } from "react";
+import { DELIVERY_FEE } from "@/lib/cart-data";
+import { useCartStore } from "@/lib/cart/store";
+import { couponLabel } from "@/lib/coupons/discount";
 import { formatPrice } from "@/lib/money";
+import { applyPromo } from "@/app/(site)/cart/actions";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import { Icon } from "@/components/ui/Icon";
@@ -27,9 +27,38 @@ export function OrderSummary({
   /** Replaces the default "Go to Checkout" button. */
   action?: React.ReactNode;
 }) {
-  function onPromo(event: FormEvent) {
+  const items = useCartStore((state) => state.items);
+  const coupon = useCartStore((state) => state.coupon);
+  const setCoupon = useCartStore((state) => state.setCoupon);
+  const [promoError, setPromoError] = useState<string>();
+  const [applying, startApplying] = useTransition();
+
+  function onPromo(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (applying) return;
+    setPromoError(undefined);
+
+    if (coupon) {
+      setCoupon(null);
+      return;
+    }
+
+    const code = String(new FormData(event.currentTarget).get("promo") ?? "");
+    startApplying(async () => {
+      try {
+        const result = await applyPromo({
+          code,
+          items: items.map(({ sku, quantity }) => ({ sku, quantity })),
+        });
+        if (result.status === "applied") setCoupon(result.coupon);
+        else setPromoError(result.message);
+      } catch {
+        setPromoError("Chưa kiểm tra được mã giảm giá. Vui lòng thử lại.");
+      }
+    });
   }
+
+  const belowMinimum = coupon !== null && subtotal < coupon.minSubtotal;
 
   return (
     <aside className="w-full rounded-[20px] border border-line p-5 xl:max-w-[505px] xl:px-6 xl:py-5">
@@ -42,12 +71,12 @@ export function OrderSummary({
           <span className="text-text-60">Tạm tính</span>
           <span className="font-bold text-black">{formatPrice(subtotal)}</span>
         </div>
-        <div className="flex items-center justify-between text-base xl:text-xl">
-          <span className="text-text-60">
-            Giảm giá (-{CART_DISCOUNT_PERCENT}%)
-          </span>
-          <span className="font-bold text-discount">-{formatPrice(discount)}</span>
-        </div>
+        {coupon ? (
+          <div className="flex items-center justify-between text-base xl:text-xl">
+            <span className="text-text-60">Giảm giá ({couponLabel(coupon)})</span>
+            <span className="font-bold text-discount">-{formatPrice(discount)}</span>
+          </div>
+        ) : null}
         <div className="flex items-center justify-between text-base xl:text-xl">
           <span className="text-text-60">Phí vận chuyển</span>
           <span className="font-bold text-black">{formatPrice(deliveryFee)}</span>
@@ -61,16 +90,35 @@ export function OrderSummary({
         </div>
       </div>
 
-      <form onSubmit={onPromo} className="mt-5 flex gap-3 xl:mt-6">
-        <TextField
-          icon="/icons/tag.svg"
-          placeholder="Nhập mã giảm giá"
-          name="promo"
-          className="h-12 min-w-0 flex-1"
-        />
-        <Button type="submit" className="h-12 shrink-0 px-8 text-sm xl:px-9">
-          Áp dụng
-        </Button>
+      <form onSubmit={onPromo} noValidate className="mt-5 xl:mt-6">
+        <div className="flex gap-3">
+          <TextField
+            key={coupon?.code ?? ""}
+            icon="/icons/tag.svg"
+            placeholder="Nhập mã giảm giá"
+            name="promo"
+            defaultValue={coupon?.code}
+            autoComplete="off"
+            error={promoError}
+            className="h-12 min-w-0 flex-1"
+          />
+          <Button
+            type="submit"
+            disabled={applying}
+            className="h-12 shrink-0 px-8 text-sm xl:px-9"
+          >
+            {coupon ? "Gỡ mã" : "Áp dụng"}
+          </Button>
+        </div>
+        {promoError ? (
+          <p id="promo-error" role="alert" className="mt-1.5 px-4 text-sm text-discount">
+            {promoError}
+          </p>
+        ) : belowMinimum ? (
+          <p className="mt-1.5 px-4 text-sm text-text-60">
+            Đơn hàng tối thiểu {formatPrice(coupon.minSubtotal)} để dùng mã {coupon.code}.
+          </p>
+        ) : null}
       </form>
 
       {action ?? (

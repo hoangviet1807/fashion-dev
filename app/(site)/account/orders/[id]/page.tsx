@@ -11,7 +11,7 @@ export default async function AccountOrderPage({ params }: { params: Promise<{ i
   const user = await requireAccountUser(`/account/orders/${id}`);
   const data = await getUserOrder(user, id);
   if (!data) notFound();
-  const { order, items } = data;
+  const { order, items, refunded } = data;
 
   return (
     <div>
@@ -30,7 +30,7 @@ export default async function AccountOrderPage({ params }: { params: Promise<{ i
         <OrderStatusBadge status={order.status} />
       </div>
 
-      <OrderDetails order={order} items={items} />
+      <OrderDetails order={order} items={items} refunded={refunded} />
     </div>
   );
 }

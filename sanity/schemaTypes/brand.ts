@@ -11,6 +11,13 @@ export const brandType = defineType({
       validation: (rule) => rule.required(),
     }),
     defineField({
+      name: "slug",
+      type: "slug",
+      description: "Used in shop filter links, e.g. /shop?brand=calvin-klein.",
+      options: { source: "name" },
+      validation: (rule) => rule.required(),
+    }),
+    defineField({
       name: "logo",
       type: "image",
       description: "White logo shown on the black brand bar (SVG recommended).",

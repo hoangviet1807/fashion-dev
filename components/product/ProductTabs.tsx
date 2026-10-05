@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/Button";
-import { Rating } from "@/components/ui/Rating";
+import { AnimatePresence, motion } from "motion/react";
+import { EASE_OUT } from "@/components/motion/Reveal";
+import { ReviewsPanel } from "@/components/product/ProductReviews";
 import { Icon } from "@/components/ui/Icon";
 import type { Product } from "@/lib/types/product";
 
@@ -27,21 +28,36 @@ export function ProductTabs({ product }: { product: Product }) {
               key={item.id}
               type="button"
               onClick={() => setTab(item.id)}
-              className={`flex-1 pb-5 text-center text-base xl:pb-6 xl:text-xl ${
-                active
-                  ? "border-b-2 border-black font-medium text-black"
-                  : "text-text-60"
+              className={`relative flex-1 border-b-2 border-transparent pb-5 text-center text-base transition-colors xl:pb-6 xl:text-xl ${
+                active ? "font-medium text-black" : "text-text-60 hover:text-black"
               }`}
             >
               {item.label}
+              {active ? (
+                <motion.span
+                  layoutId="product-tab-underline"
+                  className="absolute inset-x-0 -bottom-0.5 h-0.5 bg-black"
+                  transition={{ type: "spring", stiffness: 420, damping: 38 }}
+                />
+              ) : null}
             </button>
           );
         })}
       </div>
 
-      {tab === "details" ? <DetailsPanel product={product} /> : null}
-      {tab === "reviews" ? <ReviewsPanel product={product} /> : null}
-      {tab === "faqs" ? <FaqsPanel product={product} /> : null}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={tab}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.25, ease: EASE_OUT }}
+        >
+          {tab === "details" ? <DetailsPanel product={product} /> : null}
+          {tab === "reviews" ? <ReviewsPanel product={product} /> : null}
+          {tab === "faqs" ? <FaqsPanel product={product} /> : null}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }
@@ -75,76 +91,6 @@ function DetailsPanel({ product }: { product: Product }) {
           ))}
         </ul>
       </section>
-    </div>
-  );
-}
-
-function ReviewsPanel({ product }: { product: Product }) {
-  return (
-    <div className="pt-6 xl:pt-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h3 className="text-xl font-bold xl:text-2xl">
-          Tất cả đánh giá{" "}
-          <span className="text-base font-normal text-text-60">
-            ({product.reviewCount})
-          </span>
-        </h3>
-        <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            aria-label="Lọc đánh giá"
-            className="inline-flex size-10 items-center justify-center rounded-full bg-muted xl:size-12"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/icons/filters.svg"
-              alt=""
-              width={20}
-              height={20}
-              className="size-5"
-            />
-          </button>
-          <Button
-            variant="secondary"
-            className="hidden h-12 px-5 text-sm sm:inline-flex xl:px-6 xl:text-base"
-          >
-            Mới nhất
-          </Button>
-          <Button className="h-10 px-4 text-xs xl:h-12 xl:px-5 xl:text-base">
-            Viết đánh giá
-          </Button>
-        </div>
-      </div>
-
-      <div className="mt-6 grid grid-cols-1 gap-4 xl:mt-8 xl:grid-cols-2 xl:gap-5">
-        {product.reviews.map((review) => (
-          <article
-            key={review.id}
-            className="rounded-[20px] border border-line px-6 py-6 xl:px-8 xl:py-7"
-          >
-            <Rating value={review.rating} showValue={false} />
-            <div className="mt-3.5 flex items-center gap-1">
-              <h4 className="text-base font-bold xl:text-xl">{review.name}</h4>
-              <Icon src="/icons/verified.svg" size={19} />
-            </div>
-            <p className="mt-2 text-sm leading-[22px] text-text-60 xl:text-base">
-              &ldquo;{review.quote}&rdquo;
-            </p>
-            <p className="mt-4 text-sm font-medium text-text-60 xl:mt-6">
-              {review.postedOn}
-            </p>
-          </article>
-        ))}
-      </div>
-
-      <div className="mt-6 flex justify-center xl:mt-9">
-        <Button
-          variant="secondary"
-          className="h-[47px] w-full px-9 text-sm xl:h-[52px] xl:w-auto xl:text-base"
-        >
-          Xem thêm đánh giá
-        </Button>
-      </div>
     </div>
   );
 }

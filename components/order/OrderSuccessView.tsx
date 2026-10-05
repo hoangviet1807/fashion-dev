@@ -1,15 +1,14 @@
 import { PAYMENT_METHODS } from "@/lib/checkout/schema";
 import type { Order, OrderItem } from "@/lib/db/schema";
+import { CONFIRMED_ORDER_STATUSES } from "@/lib/orders/status";
 import { Container } from "@/components/layout/Container";
 import { ShopBreadcrumb } from "@/components/shop/ShopBreadcrumb";
 import { Button } from "@/components/ui/Button";
 import { ClearCart } from "./ClearCart";
 import { OrderDetails } from "./OrderDetails";
 
-const CONFIRMED: Order["status"][] = ["paid", "awaiting_fulfillment", "fulfilled"];
-
 export function OrderSuccessView({ order, items }: { order: Order; items: OrderItem[] }) {
-  const confirmed = CONFIRMED.includes(order.status);
+  const confirmed = CONFIRMED_ORDER_STATUSES.includes(order.status);
 
   return (
     <div>

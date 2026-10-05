@@ -3,6 +3,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import type { AppliedCoupon } from "@/lib/coupons/discount";
 
 export type CartLine = {
   sku: string;
@@ -21,6 +22,9 @@ type CartState = {
   items: CartLine[];
   /** Signed-in user this cart mirrors in the database; null for a guest cart. */
   owner: string | null;
+  /** Promo code accepted by the server; re-validated at checkout. */
+  coupon: AppliedCoupon | null;
+  setCoupon: (coupon: AppliedCoupon | null) => void;
   /** Returns the quantity actually added after capping at stock. */
   add: (line: Omit<CartLine, "quantity">, quantity: number) => number;
   updateQty: (sku: string, quantity: number) => void;
@@ -44,6 +48,9 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       items: [],
       owner: null,
+      coupon: null,
+
+      setCoupon: (coupon) => set({ coupon }),
 
       add: (line, quantity) => {
         const existing = get().items.find((item) => item.sku === line.sku);
@@ -79,11 +86,11 @@ export const useCartStore = create<CartState>()(
 
       replace: (lines) => set({ items: lines }),
 
-      clear: () => set({ items: [] }),
+      clear: () => set({ items: [], coupon: null }),
 
       attach: (owner, lines) => set({ owner, items: lines }),
 
-      detach: () => set({ owner: null, items: [] }),
+      detach: () => set({ owner: null, items: [], coupon: null }),
 
       count: () => get().items.reduce((sum, item) => sum + item.quantity, 0),
     }),
@@ -94,7 +101,7 @@ export const useCartStore = create<CartState>()(
       migrate: (persisted, version) =>
         (version < 2 ? { items: [], owner: null } : persisted) as Pick<CartState, "items" | "owner">,
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ items: state.items, owner: state.owner }),
+      partialize: (state) => ({ items: state.items, owner: state.owner, coupon: state.coupon }),
       // Rehydrated after mount so server and first client render agree.
       skipHydration: true,
     },

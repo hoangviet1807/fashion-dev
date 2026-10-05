@@ -23,7 +23,7 @@ export function SelectField({
 
   return (
     <label
-      className={`relative flex h-12 items-center overflow-clip rounded-[62px] bg-muted px-4 py-3 ${error ? "ring-1 ring-discount" : ""} ${disabled ? "opacity-50" : ""} ${className}`}
+      className={`relative flex h-12 items-center overflow-clip rounded-[62px] bg-muted px-4 py-3 transition-[background-color,box-shadow] duration-200 focus-within:bg-white ${error ? "ring-1 ring-discount focus-within:ring-2" : "focus-within:ring-2 focus-within:ring-black"} ${disabled ? "opacity-50" : "not-focus-within:hover:bg-black/[0.07]"} ${className}`}
     >
       <select
         name={name}

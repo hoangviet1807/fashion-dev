@@ -39,7 +39,7 @@ export async function requireAccountUser(callbackUrl = "/account") {
  * Orders placed while signed in, plus guest orders to the same address once the
  * email is verified (otherwise anyone could register with someone else's email).
  */
-function ownedBy(user: AccountUser): SQL {
+export function ownedBy(user: AccountUser): SQL {
   const byUser = eq(orders.userId, user.id);
   if (!user.emailVerified || !user.email) return byUser;
   return or(

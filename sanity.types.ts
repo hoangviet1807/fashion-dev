@@ -38,11 +38,52 @@ export type SiteSettings = {
       _key: string;
     } & ProductReference
   >;
+  announcement?: {
+    enabled?: boolean;
+    text?: string;
+    linkLabel?: string;
+    linkHref?: string;
+  };
   productFaqs?: Array<
     {
       _key: string;
     } & Faq
   >;
+};
+
+export type Page = {
+  _id: string;
+  _type: "page";
+  _createdAt: string;
+  _updatedAt: string;
+  _rev: string;
+  title: string;
+  slug: Slug;
+  description?: string;
+  body?: Array<{
+    children?: Array<{
+      marks?: Array<string>;
+      text?: string;
+      _type: "span";
+      _key: string;
+    }>;
+    style?: "normal" | "h2" | "h3";
+    listItem?: "bullet" | "number";
+    markDefs?: Array<{
+      href?: string;
+      _type: "link";
+      _key: string;
+    }>;
+    level?: number;
+    _type: "block";
+    _key: string;
+  }>;
+};
+
+export type Slug = {
+  _type: "slug";
+  current: string;
+  source?: string;
 };
 
 export type Testimonial = {
@@ -64,12 +105,6 @@ export type DressStyle = {
   _rev: string;
   title: string;
   slug: Slug;
-};
-
-export type Slug = {
-  _type: "slug";
-  current: string;
-  source?: string;
 };
 
 export type Faq = {
@@ -198,6 +233,7 @@ export type Brand = {
   _updatedAt: string;
   _rev: string;
   name: string;
+  slug: Slug;
   logo: {
     asset?: SanityImageAssetReference;
     media?: unknown;
@@ -334,9 +370,10 @@ export type Geopoint = {
 export type AllSanitySchemaTypes =
   | ProductReference
   | SiteSettings
+  | Page
+  | Slug
   | Testimonial
   | DressStyle
-  | Slug
   | Faq
   | ProductVariant
   | SanityImageAssetReference
@@ -359,7 +396,7 @@ export type AllSanitySchemaTypes =
 
 // Source: sanity/lib/queries.ts
 // Variable: SHOP_PRODUCTS_QUERY
-// Query: {  "items": *[  _type == "product" && defined(slug.current)  && (count($terms) == 0 || (  [name, category->title, category->slug.current, brand->name]  + coalesce(dressStyles[]->title, [])  + coalesce(dressStyles[]->slug.current, [])  + coalesce(variants[].color, [])  + coalesce(tags, [])) match $terms || (  [name, category->title, category->slug.current, brand->name]  + coalesce(dressStyles[]->title, [])  + coalesce(dressStyles[]->slug.current, [])  + coalesce(variants[].color, [])  + coalesce(tags, [])) match $altTerms)  && (!defined($category) || category->slug.current == $category)  && (!defined($style) || $style in dressStyles[]->slug.current)  && (!defined($color) || $color in variants[].color)  && (!defined($size) || $size in variants[].size)  && (!defined($minPrice) || price >= $minPrice)  && (!defined($maxPrice) || price <= $maxPrice)]    | score(boost(name match $terms, 3), boost(name match $altTerms, 3))    | order(        select($sort == "low-price" => price, $sort == "high-price" => -price, -_score) asc,        popularity desc      )    [$start...$end] {   _id,  "slug": slug.current,  name,  "image": images[0].asset->url,  price,  compareAtPrice,  discount,  rating,  "category": category->slug.current,  "styles": dressStyles[]->slug.current,  "colors": array::unique(variants[].color),  "sizes": array::unique(variants[].size) },  "total": count(*[  _type == "product" && defined(slug.current)  && (count($terms) == 0 || (  [name, category->title, category->slug.current, brand->name]  + coalesce(dressStyles[]->title, [])  + coalesce(dressStyles[]->slug.current, [])  + coalesce(variants[].color, [])  + coalesce(tags, [])) match $terms || (  [name, category->title, category->slug.current, brand->name]  + coalesce(dressStyles[]->title, [])  + coalesce(dressStyles[]->slug.current, [])  + coalesce(variants[].color, [])  + coalesce(tags, [])) match $altTerms)  && (!defined($category) || category->slug.current == $category)  && (!defined($style) || $style in dressStyles[]->slug.current)  && (!defined($color) || $color in variants[].color)  && (!defined($size) || $size in variants[].size)  && (!defined($minPrice) || price >= $minPrice)  && (!defined($maxPrice) || price <= $maxPrice)])}
+// Query: {  "items": *[  _type == "product" && defined(slug.current)  && (count($terms) == 0 || (  [name, category->title, category->slug.current, brand->name]  + coalesce(dressStyles[]->title, [])  + coalesce(dressStyles[]->slug.current, [])  + coalesce(variants[].color, [])  + coalesce(tags, [])) match $terms || (  [name, category->title, category->slug.current, brand->name]  + coalesce(dressStyles[]->title, [])  + coalesce(dressStyles[]->slug.current, [])  + coalesce(variants[].color, [])  + coalesce(tags, [])) match $altTerms)  && (!$sale || compareAtPrice > price || discount > 0)  && (!defined($brand) || brand->slug.current == $brand)  && (!defined($category) || category->slug.current == $category)  && (!defined($style) || $style in dressStyles[]->slug.current)  && (!defined($color) || $color in variants[].color)  && (!defined($size) || $size in variants[].size)  && (!defined($minPrice) || price >= $minPrice)  && (!defined($maxPrice) || price <= $maxPrice)]    | score(boost(name match $terms, 3), boost(name match $altTerms, 3))    | order(        select($sort == "newest" => _createdAt) desc,        select($sort == "low-price" => price, $sort == "high-price" => -price, -_score) asc,        popularity desc      )    [$start...$end] {   _id,  "slug": slug.current,  name,  "image": images[0].asset->url,  price,  compareAtPrice,  discount,  rating,  "category": category->slug.current,  "styles": dressStyles[]->slug.current,  "colors": array::unique(variants[].color),  "sizes": array::unique(variants[].size) },  "total": count(*[  _type == "product" && defined(slug.current)  && (count($terms) == 0 || (  [name, category->title, category->slug.current, brand->name]  + coalesce(dressStyles[]->title, [])  + coalesce(dressStyles[]->slug.current, [])  + coalesce(variants[].color, [])  + coalesce(tags, [])) match $terms || (  [name, category->title, category->slug.current, brand->name]  + coalesce(dressStyles[]->title, [])  + coalesce(dressStyles[]->slug.current, [])  + coalesce(variants[].color, [])  + coalesce(tags, [])) match $altTerms)  && (!$sale || compareAtPrice > price || discount > 0)  && (!defined($brand) || brand->slug.current == $brand)  && (!defined($category) || category->slug.current == $category)  && (!defined($style) || $style in dressStyles[]->slug.current)  && (!defined($color) || $color in variants[].color)  && (!defined($size) || $size in variants[].size)  && (!defined($minPrice) || price >= $minPrice)  && (!defined($maxPrice) || price <= $maxPrice)])}
 export type SHOP_PRODUCTS_QUERY_RESULT = {
   items: Array<{
     _id: string;
@@ -569,14 +606,83 @@ export type CHECKOUT_VARIANTS_QUERY_RESULT = Array<{
 
 // Source: sanity/lib/queries.ts
 // Variable: INVENTORY_DOCS_QUERY
-// Query: *[_type == "product" && count(variants[sku in $skus]) > 0] {    _id,    "variants": variants[sku in $skus] { _key, sku }  }
+// Query: *[_type == "product" && count(variants[sku in $skus]) > 0] {    _id,    name,    "variants": variants[sku in $skus] { _key, sku, color, size, stock }  }
 export type INVENTORY_DOCS_QUERY_RESULT = Array<{
   _id: string;
+  name: string;
   variants: Array<{
     _key: string;
     sku: string;
+    color:
+      | "black"
+      | "blue"
+      | "cyan"
+      | "forest"
+      | "green"
+      | "navy"
+      | "olive"
+      | "orange"
+      | "pink"
+      | "purple"
+      | "red"
+      | "white"
+      | "yellow";
+    size:
+      | "3X-Large"
+      | "4X-Large"
+      | "Large"
+      | "Medium"
+      | "Small"
+      | "X-Large"
+      | "X-Small"
+      | "XX-Large"
+      | "XX-Small";
+    stock: number;
   }>;
 }>;
+
+// Source: sanity/lib/queries.ts
+// Variable: LOW_STOCK_QUERY
+// Query: *[_type == "product" && defined(slug.current) && count(variants[stock <= $threshold]) > 0]    | order(name asc) {    _id,    name,    "slug": slug.current,    "image": images[0].asset->url,    "variants": variants[stock <= $threshold] | order(stock asc) { sku, color, size, stock }  }
+export type LOW_STOCK_QUERY_RESULT = Array<{
+  _id: string;
+  name: string;
+  slug: string;
+  image: string | null;
+  variants: Array<{
+    sku: string;
+    color:
+      | "black"
+      | "blue"
+      | "cyan"
+      | "forest"
+      | "green"
+      | "navy"
+      | "olive"
+      | "orange"
+      | "pink"
+      | "purple"
+      | "red"
+      | "white"
+      | "yellow";
+    size:
+      | "3X-Large"
+      | "4X-Large"
+      | "Large"
+      | "Medium"
+      | "Small"
+      | "X-Large"
+      | "X-Small"
+      | "XX-Large"
+      | "XX-Small";
+    stock: number;
+  }>;
+}>;
+
+// Source: sanity/lib/queries.ts
+// Variable: PRODUCT_RATING_DOCS_QUERY
+// Query: *[_type == "product" && slug.current == $slug]._id
+export type PRODUCT_RATING_DOCS_QUERY_RESULT = Array<string>;
 
 // Source: sanity/lib/queries.ts
 // Variable: PRODUCT_SLUGS_QUERY
@@ -672,6 +778,16 @@ export type HOME_COLLECTIONS_QUERY_RESULT =
   | null;
 
 // Source: sanity/lib/queries.ts
+// Variable: ANNOUNCEMENT_QUERY
+// Query: *[_id == "siteSettings"][0].announcement { enabled, text, linkLabel, linkHref }
+export type ANNOUNCEMENT_QUERY_RESULT = {
+  enabled: boolean | null;
+  text: string | null;
+  linkLabel: string | null;
+  linkHref: string | null;
+} | null;
+
+// Source: sanity/lib/queries.ts
 // Variable: TESTIMONIALS_QUERY
 // Query: *[_type == "testimonial"] | order(order asc) { _id, name, quote }
 export type TESTIMONIALS_QUERY_RESULT = Array<{
@@ -682,27 +798,70 @@ export type TESTIMONIALS_QUERY_RESULT = Array<{
 
 // Source: sanity/lib/queries.ts
 // Variable: BRANDS_QUERY
-// Query: *[_type == "brand" && defined(logo.asset)] | order(order asc) {    _id,    name,    "src": logo.asset->url,    "width": logo.asset->metadata.dimensions.width,    "height": logo.asset->metadata.dimensions.height  }
+// Query: *[_type == "brand" && defined(logo.asset)] | order(order asc) {    _id,    name,    "slug": slug.current,    "src": logo.asset->url,    "width": logo.asset->metadata.dimensions.width,    "height": logo.asset->metadata.dimensions.height  }
 export type BRANDS_QUERY_RESULT = Array<{
   _id: string;
   name: string;
+  slug: string;
   src: string;
   width: number | null;
   height: number | null;
 }>;
 
+// Source: sanity/lib/queries.ts
+// Variable: BRAND_NAME_QUERY
+// Query: *[_type == "brand" && slug.current == $slug][0].name
+export type BRAND_NAME_QUERY_RESULT = string | null;
+
+// Source: sanity/lib/queries.ts
+// Variable: PAGE_BY_SLUG_QUERY
+// Query: *[_type == "page" && slug.current == $slug][0] { title, description, body }
+export type PAGE_BY_SLUG_QUERY_RESULT = {
+  title: string;
+  description: string | null;
+  body: Array<{
+    children?: Array<{
+      marks?: Array<string>;
+      text?: string;
+      _type: "span";
+      _key: string;
+    }>;
+    style?: "h2" | "h3" | "normal";
+    listItem?: "bullet" | "number";
+    markDefs?: Array<{
+      href?: string;
+      _type: "link";
+      _key: string;
+    }>;
+    level?: number;
+    _type: "block";
+    _key: string;
+  }> | null;
+} | null;
+
+// Source: sanity/lib/queries.ts
+// Variable: PAGE_SLUGS_QUERY
+// Query: *[_type == "page" && defined(slug.current)].slug.current
+export type PAGE_SLUGS_QUERY_RESULT = Array<string>;
+
 // Query TypeMap
 import "@sanity/client";
 declare module "@sanity/client" {
   interface SanityQueries {
-    '{\n  "items": *[\n  _type == "product" && defined(slug.current)\n  && (count($terms) == 0 || (\n  [name, category->title, category->slug.current, brand->name]\n  + coalesce(dressStyles[]->title, [])\n  + coalesce(dressStyles[]->slug.current, [])\n  + coalesce(variants[].color, [])\n  + coalesce(tags, [])\n) match $terms || (\n  [name, category->title, category->slug.current, brand->name]\n  + coalesce(dressStyles[]->title, [])\n  + coalesce(dressStyles[]->slug.current, [])\n  + coalesce(variants[].color, [])\n  + coalesce(tags, [])\n) match $altTerms)\n  && (!defined($category) || category->slug.current == $category)\n  && (!defined($style) || $style in dressStyles[]->slug.current)\n  && (!defined($color) || $color in variants[].color)\n  && (!defined($size) || $size in variants[].size)\n  && (!defined($minPrice) || price >= $minPrice)\n  && (!defined($maxPrice) || price <= $maxPrice)\n]\n    | score(boost(name match $terms, 3), boost(name match $altTerms, 3))\n    | order(\n        select($sort == "low-price" => price, $sort == "high-price" => -price, -_score) asc,\n        popularity desc\n      )\n    [$start...$end] { \n  _id,\n  "slug": slug.current,\n  name,\n  "image": images[0].asset->url,\n  price,\n  compareAtPrice,\n  discount,\n  rating,\n  "category": category->slug.current,\n  "styles": dressStyles[]->slug.current,\n  "colors": array::unique(variants[].color),\n  "sizes": array::unique(variants[].size)\n },\n  "total": count(*[\n  _type == "product" && defined(slug.current)\n  && (count($terms) == 0 || (\n  [name, category->title, category->slug.current, brand->name]\n  + coalesce(dressStyles[]->title, [])\n  + coalesce(dressStyles[]->slug.current, [])\n  + coalesce(variants[].color, [])\n  + coalesce(tags, [])\n) match $terms || (\n  [name, category->title, category->slug.current, brand->name]\n  + coalesce(dressStyles[]->title, [])\n  + coalesce(dressStyles[]->slug.current, [])\n  + coalesce(variants[].color, [])\n  + coalesce(tags, [])\n) match $altTerms)\n  && (!defined($category) || category->slug.current == $category)\n  && (!defined($style) || $style in dressStyles[]->slug.current)\n  && (!defined($color) || $color in variants[].color)\n  && (!defined($size) || $size in variants[].size)\n  && (!defined($minPrice) || price >= $minPrice)\n  && (!defined($maxPrice) || price <= $maxPrice)\n])\n}': SHOP_PRODUCTS_QUERY_RESULT;
+    '{\n  "items": *[\n  _type == "product" && defined(slug.current)\n  && (count($terms) == 0 || (\n  [name, category->title, category->slug.current, brand->name]\n  + coalesce(dressStyles[]->title, [])\n  + coalesce(dressStyles[]->slug.current, [])\n  + coalesce(variants[].color, [])\n  + coalesce(tags, [])\n) match $terms || (\n  [name, category->title, category->slug.current, brand->name]\n  + coalesce(dressStyles[]->title, [])\n  + coalesce(dressStyles[]->slug.current, [])\n  + coalesce(variants[].color, [])\n  + coalesce(tags, [])\n) match $altTerms)\n  && (!$sale || compareAtPrice > price || discount > 0)\n  && (!defined($brand) || brand->slug.current == $brand)\n  && (!defined($category) || category->slug.current == $category)\n  && (!defined($style) || $style in dressStyles[]->slug.current)\n  && (!defined($color) || $color in variants[].color)\n  && (!defined($size) || $size in variants[].size)\n  && (!defined($minPrice) || price >= $minPrice)\n  && (!defined($maxPrice) || price <= $maxPrice)\n]\n    | score(boost(name match $terms, 3), boost(name match $altTerms, 3))\n    | order(\n        select($sort == "newest" => _createdAt) desc,\n        select($sort == "low-price" => price, $sort == "high-price" => -price, -_score) asc,\n        popularity desc\n      )\n    [$start...$end] { \n  _id,\n  "slug": slug.current,\n  name,\n  "image": images[0].asset->url,\n  price,\n  compareAtPrice,\n  discount,\n  rating,\n  "category": category->slug.current,\n  "styles": dressStyles[]->slug.current,\n  "colors": array::unique(variants[].color),\n  "sizes": array::unique(variants[].size)\n },\n  "total": count(*[\n  _type == "product" && defined(slug.current)\n  && (count($terms) == 0 || (\n  [name, category->title, category->slug.current, brand->name]\n  + coalesce(dressStyles[]->title, [])\n  + coalesce(dressStyles[]->slug.current, [])\n  + coalesce(variants[].color, [])\n  + coalesce(tags, [])\n) match $terms || (\n  [name, category->title, category->slug.current, brand->name]\n  + coalesce(dressStyles[]->title, [])\n  + coalesce(dressStyles[]->slug.current, [])\n  + coalesce(variants[].color, [])\n  + coalesce(tags, [])\n) match $altTerms)\n  && (!$sale || compareAtPrice > price || discount > 0)\n  && (!defined($brand) || brand->slug.current == $brand)\n  && (!defined($category) || category->slug.current == $category)\n  && (!defined($style) || $style in dressStyles[]->slug.current)\n  && (!defined($color) || $color in variants[].color)\n  && (!defined($size) || $size in variants[].size)\n  && (!defined($minPrice) || price >= $minPrice)\n  && (!defined($maxPrice) || price <= $maxPrice)\n])\n}': SHOP_PRODUCTS_QUERY_RESULT;
     '\n  *[_type == "product" && slug.current == $slug][0] {\n    \n  _id,\n  "slug": slug.current,\n  name,\n  "image": images[0].asset->url,\n  price,\n  compareAtPrice,\n  discount,\n  rating,\n  "category": category->slug.current,\n  "styles": dressStyles[]->slug.current,\n  "colors": array::unique(variants[].color),\n  "sizes": array::unique(variants[].size)\n,\n    description,\n    "categoryTitle": category->title,\n    "images": images[].asset->url,\n    reviewCount,\n    "variants": variants[] { sku, color, size, stock },\n    details { material, fit, featuresIntro, features },\n    "faqs": coalesce(faqs, *[_id == "siteSettings"][0].productFaqs)[] {\n      "id": _key,\n      question,\n      answer\n    }\n  }\n': PRODUCT_BY_SLUG_QUERY_RESULT;
     '\n  *[_type == "product" && slug.current == $slug][0] {\n    "items": select(\n      count(relatedProducts) > 0 => relatedProducts[]-> { \n  _id,\n  "slug": slug.current,\n  name,\n  "image": images[0].asset->url,\n  price,\n  compareAtPrice,\n  discount,\n  rating,\n  "category": category->slug.current,\n  "styles": dressStyles[]->slug.current,\n  "colors": array::unique(variants[].color),\n  "sizes": array::unique(variants[].size)\n },\n      *[_type == "product" && defined(slug.current) && slug.current != $slug]\n        | order(popularity desc) [0...4] { \n  _id,\n  "slug": slug.current,\n  name,\n  "image": images[0].asset->url,\n  price,\n  compareAtPrice,\n  discount,\n  rating,\n  "category": category->slug.current,\n  "styles": dressStyles[]->slug.current,\n  "colors": array::unique(variants[].color),\n  "sizes": array::unique(variants[].size)\n }\n    )\n  }.items\n': RELATED_PRODUCTS_QUERY_RESULT;
     '\n  *[_type == "product" && defined(slug.current) && count(variants[sku in $skus]) > 0] {\n    "slug": slug.current,\n    name,\n    "image": images[0].asset->url,\n    price,\n    "variants": variants[sku in $skus] { sku, color, size, stock }\n  }\n': CHECKOUT_VARIANTS_QUERY_RESULT;
-    '\n  *[_type == "product" && count(variants[sku in $skus]) > 0] {\n    _id,\n    "variants": variants[sku in $skus] { _key, sku }\n  }\n': INVENTORY_DOCS_QUERY_RESULT;
+    '\n  *[_type == "product" && count(variants[sku in $skus]) > 0] {\n    _id,\n    name,\n    "variants": variants[sku in $skus] { _key, sku, color, size, stock }\n  }\n': INVENTORY_DOCS_QUERY_RESULT;
+    '\n  *[_type == "product" && defined(slug.current) && count(variants[stock <= $threshold]) > 0]\n    | order(name asc) {\n    _id,\n    name,\n    "slug": slug.current,\n    "image": images[0].asset->url,\n    "variants": variants[stock <= $threshold] | order(stock asc) { sku, color, size, stock }\n  }\n': LOW_STOCK_QUERY_RESULT;
+    '\n  *[_type == "product" && slug.current == $slug]._id\n': PRODUCT_RATING_DOCS_QUERY_RESULT;
     '\n  *[_type == "product" && defined(slug.current)].slug.current\n': PRODUCT_SLUGS_QUERY_RESULT;
     '\n  *[_id == "siteSettings"][0] {\n    "newArrivals": newArrivals[]-> { \n  _id,\n  "slug": slug.current,\n  name,\n  "image": images[0].asset->url,\n  price,\n  compareAtPrice,\n  discount,\n  rating,\n  "category": category->slug.current,\n  "styles": dressStyles[]->slug.current,\n  "colors": array::unique(variants[].color),\n  "sizes": array::unique(variants[].size)\n },\n    "topSelling": topSelling[]-> { \n  _id,\n  "slug": slug.current,\n  name,\n  "image": images[0].asset->url,\n  price,\n  compareAtPrice,\n  discount,\n  rating,\n  "category": category->slug.current,\n  "styles": dressStyles[]->slug.current,\n  "colors": array::unique(variants[].color),\n  "sizes": array::unique(variants[].size)\n }\n  }\n': HOME_COLLECTIONS_QUERY_RESULT;
+    '\n  *[_id == "siteSettings"][0].announcement { enabled, text, linkLabel, linkHref }\n': ANNOUNCEMENT_QUERY_RESULT;
     '\n  *[_type == "testimonial"] | order(order asc) { _id, name, quote }\n': TESTIMONIALS_QUERY_RESULT;
-    '\n  *[_type == "brand" && defined(logo.asset)] | order(order asc) {\n    _id,\n    name,\n    "src": logo.asset->url,\n    "width": logo.asset->metadata.dimensions.width,\n    "height": logo.asset->metadata.dimensions.height\n  }\n': BRANDS_QUERY_RESULT;
+    '\n  *[_type == "brand" && defined(logo.asset)] | order(order asc) {\n    _id,\n    name,\n    "slug": slug.current,\n    "src": logo.asset->url,\n    "width": logo.asset->metadata.dimensions.width,\n    "height": logo.asset->metadata.dimensions.height\n  }\n': BRANDS_QUERY_RESULT;
+    '\n  *[_type == "brand" && slug.current == $slug][0].name\n': BRAND_NAME_QUERY_RESULT;
+    '\n  *[_type == "page" && slug.current == $slug][0] { title, description, body }\n': PAGE_BY_SLUG_QUERY_RESULT;
+    '\n  *[_type == "page" && defined(slug.current)].slug.current\n': PAGE_SLUGS_QUERY_RESULT;
   }
 }

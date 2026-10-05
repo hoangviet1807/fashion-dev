@@ -2,6 +2,7 @@ import { and, eq, gt, inArray, sql } from "drizzle-orm";
 import { getDb, type Transaction } from "@/lib/db";
 import { inventoryReservations } from "@/lib/db/schema";
 import { fetchVariants } from "@/lib/checkout/quote";
+import { crossesThreshold, notifyLowStock, type LowStockVariant } from "@/lib/inventory/low-stock";
 import { INVENTORY_DOCS_QUERY } from "@/sanity/lib/queries";
 import { getWriteClient } from "@/sanity/lib/write-client";
 
@@ -88,32 +89,35 @@ export async function releaseReservations(tx: Transaction, orderId: string) {
     );
 }
 
+type ReservationStatus = (typeof inventoryReservations.$inferSelect)["status"];
+
 /**
- * Turns an order's reservations into real stock decrements in Sanity (published
- * and draft documents). Returns false if inventory could not be written.
+ * Applies an order's reservations in `from` status to Sanity stock (published
+ * and draft documents) and moves them to `to`. Returns the variants that fell
+ * to the low-stock threshold, or null if inventory could not be written.
  */
-export async function commitReservations(orderId: string): Promise<boolean> {
+async function moveStock(
+  orderId: string,
+  { from, to, direction }: { from: ReservationStatus; to: ReservationStatus; direction: "dec" | "inc" },
+): Promise<LowStockVariant[] | null> {
   const writeClient = getWriteClient();
   if (!writeClient) {
     console.error(
-      `[inventory] SANITY_API_WRITE_TOKEN is not set; stock for order ${orderId} was not decremented.`,
+      `[inventory] SANITY_API_WRITE_TOKEN is not set; stock for order ${orderId} was not ${direction === "dec" ? "decremented" : "restored"}.`,
     );
-    return false;
+    return null;
   }
 
   try {
-    await getDb().transaction(async (tx) => {
+    return await getDb().transaction(async (tx) => {
       const rows = await tx
         .select()
         .from(inventoryReservations)
         .where(
-          and(
-            eq(inventoryReservations.orderId, orderId),
-            eq(inventoryReservations.status, "active"),
-          ),
+          and(eq(inventoryReservations.orderId, orderId), eq(inventoryReservations.status, from)),
         )
         .for("update");
-      if (rows.length === 0) return;
+      if (rows.length === 0) return [];
 
       const skus = rows.map((row) => row.sku);
       await lockSkus(tx, skus);
@@ -125,29 +129,66 @@ export async function commitReservations(orderId: string): Promise<boolean> {
 
       const docs = await writeClient.fetch(INVENTORY_DOCS_QUERY, { skus });
       const mutation = writeClient.transaction();
+      const crossed: LowStockVariant[] = [];
       for (const doc of docs) {
-        const dec: Record<string, number> = {};
+        const change: Record<string, number> = {};
         for (const variant of doc.variants) {
           const quantity = quantities.get(variant.sku);
-          if (quantity) dec[`variants[_key=="${variant._key}"].stock`] = quantity;
+          if (!quantity) continue;
+          change[`variants[_key=="${variant._key}"].stock`] = quantity;
+
+          const before = variant.stock ?? 0;
+          const after = before - quantity;
+          if (direction === "dec" && !doc._id.startsWith("drafts.") && crossesThreshold(before, after)) {
+            crossed.push({
+              name: doc.name ?? variant.sku,
+              sku: variant.sku,
+              color: variant.color ?? "",
+              size: variant.size ?? "",
+              stock: Math.max(0, after),
+            });
+          }
         }
-        if (Object.keys(dec).length > 0) mutation.patch(doc._id, (patch) => patch.dec(dec));
+        if (Object.keys(change).length > 0) {
+          mutation.patch(doc._id, (patch) => patch[direction](change));
+        }
       }
       await mutation.commit({ visibility: "async" });
 
       await tx
         .update(inventoryReservations)
-        .set({ status: "committed" })
+        .set({ status: to })
         .where(
           inArray(
             inventoryReservations.id,
             rows.map((row) => row.id),
           ),
         );
+      return crossed;
     });
-    return true;
   } catch (error) {
-    console.error(`[inventory] Failed to commit stock for order ${orderId}`, error);
-    return false;
+    console.error(
+      `[inventory] Failed to ${direction === "dec" ? "commit" : "restore"} stock for order ${orderId}`,
+      error,
+    );
+    return null;
   }
+}
+
+/**
+ * Turns an order's reservations into real stock decrements in Sanity and emails
+ * staff about variants that just ran low. Returns false if inventory could not
+ * be written.
+ */
+export async function commitReservations(orderId: string): Promise<boolean> {
+  const crossed = await moveStock(orderId, { from: "active", to: "committed", direction: "dec" });
+  if (crossed === null) return false;
+  if (crossed.length > 0) await notifyLowStock(crossed);
+  return true;
+}
+
+/** Puts a cancelled order's sold units back into Sanity stock (once). */
+export async function restockOrder(orderId: string): Promise<boolean> {
+  const result = await moveStock(orderId, { from: "committed", to: "released", direction: "inc" });
+  return result !== null;
 }

@@ -10,10 +10,12 @@ import { formatPrice } from "@/lib/money";
 export function OrderDetails({
   order,
   items,
+  refunded = 0,
   action,
 }: {
   order: Order;
   items: OrderItem[];
+  refunded?: number;
   action?: React.ReactNode;
 }) {
   const address = order.shippingAddress;
@@ -39,6 +41,14 @@ export function OrderDetails({
         <hr className="border-line" />
         <Detail title="Phương thức giao hàng">
           {shipping ? `${shipping.label} · ${shipping.eta}` : order.shippingMethod}
+          {order.carrier || order.trackingNumber ? (
+            <>
+              <br />
+              {[order.carrier, order.trackingNumber && `Mã vận đơn ${order.trackingNumber}`]
+                .filter(Boolean)
+                .join(" · ")}
+            </>
+          ) : null}
         </Detail>
         <hr className="border-line" />
         <Detail title="Thanh toán">{PAYMENT_METHODS[order.paymentMethod].label}</Detail>
@@ -72,7 +82,13 @@ export function OrderDetails({
 
         <div className="mt-4 flex flex-col gap-5 xl:mt-6">
           <Row label="Tạm tính" value={price(order.subtotal)} />
-          <Row label="Giảm giá" value={`-${price(order.discount)}`} discount />
+          {order.discount > 0 || order.couponCode ? (
+            <Row
+              label={order.couponCode ? `Giảm giá (${order.couponCode})` : "Giảm giá"}
+              value={`-${price(order.discount)}`}
+              discount
+            />
+          ) : null}
           <Row label="Phí vận chuyển" value={price(order.deliveryFee)} />
           <hr className="border-line" />
           <div className="flex items-center justify-between">
@@ -81,6 +97,7 @@ export function OrderDetails({
               {price(order.total)}
             </span>
           </div>
+          {refunded > 0 ? <Row label="Đã hoàn tiền" value={`-${price(refunded)}`} discount /> : null}
         </div>
 
         {action}

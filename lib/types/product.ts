@@ -49,7 +49,8 @@ export type Product = {
   variants: ProductVariant[];
   details: ProductDetails;
   faqs: ProductFaq[];
-  reviews: ProductReview[];
+  /** First page of reviews, newest first. */
+  reviews: { items: ProductReview[]; total: number };
 };
 
 /** Lightweight shape for cards and listings. */
@@ -68,11 +69,15 @@ export type ProductSummary = {
   sizes: string[];
 };
 
-export type ProductSort = "most-popular" | "low-price" | "high-price";
+export type ProductSort = "most-popular" | "newest" | "low-price" | "high-price";
 
 export type ProductFilters = {
   /** Free-text search. */
   q?: string;
+  /** Only discounted products. */
+  sale?: boolean;
+  /** Brand slug. */
+  brand?: string;
   style?: DressStyleId;
   category?: CategoryId;
   color?: string;

@@ -9,8 +9,40 @@ import {
   mergeCartItems,
   replaceServerCart,
 } from "@/lib/cart/server";
-import { checkoutLineSchema } from "@/lib/checkout/schema";
+import { checkoutItemsSchema, checkoutLineSchema } from "@/lib/checkout/schema";
 import { quoteCart } from "@/lib/checkout/quote";
+import { COUPON_CODE_MAX, toAppliedCoupon, type AppliedCoupon } from "@/lib/coupons/discount";
+import { checkCoupon } from "@/lib/coupons/server";
+
+const promoSchema = z.object({
+  code: z.string().trim().min(1, "Vui lòng nhập mã giảm giá.").max(COUPON_CODE_MAX, "Mã giảm giá không tồn tại."),
+  items: checkoutItemsSchema,
+});
+
+export type PromoResult =
+  | { status: "applied"; coupon: AppliedCoupon }
+  | { status: "invalid"; message: string };
+
+/** Validates a promo code against the cart priced from Sanity. */
+export async function applyPromo(input: z.input<typeof promoSchema>): Promise<PromoResult> {
+  const parsed = promoSchema.safeParse(input);
+  if (!parsed.success) {
+    return { status: "invalid", message: parsed.error.issues[0]?.message ?? "Mã giảm giá không tồn tại." };
+  }
+
+  try {
+    const quote = await quoteCart(parsed.data.items);
+    if (quote.lines.length === 0) {
+      return { status: "invalid", message: "Giỏ hàng của bạn đang trống." };
+    }
+    const check = await checkCoupon(parsed.data.code, quote.subtotal);
+    if (!check.ok) return { status: "invalid", message: check.message };
+    return { status: "applied", coupon: toAppliedCoupon(check.coupon) };
+  } catch (error) {
+    console.error("[cart] Failed to apply promo code", error);
+    return { status: "invalid", message: "Chưa kiểm tra được mã giảm giá. Vui lòng thử lại." };
+  }
+}
 
 const syncSchema = z.object({
   items: z.array(checkoutLineSchema).max(MAX_CART_LINES),

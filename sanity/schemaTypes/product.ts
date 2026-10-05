@@ -1,4 +1,5 @@
 import { defineArrayMember, defineField, defineType } from "sanity";
+import { LOW_STOCK_THRESHOLD } from "../../lib/inventory/threshold";
 import { formatPrice } from "../../lib/money";
 
 type Variant = { sku?: string; color?: string; size?: string };
@@ -122,12 +123,16 @@ export const productType = defineType({
       name: "rating",
       type: "number",
       group: "main",
+      description: "Average of customer reviews; updated automatically.",
+      readOnly: true,
       validation: (rule) => rule.min(0).max(5),
     }),
     defineField({
       name: "reviewCount",
       type: "number",
       group: "main",
+      description: "Number of customer reviews; updated automatically.",
+      readOnly: true,
       initialValue: 0,
       validation: (rule) => rule.integer().min(0),
     }),
@@ -190,11 +195,16 @@ export const productType = defineType({
     },
   ],
   preview: {
-    select: { title: "name", price: "price", media: "images.0" },
-    prepare: ({ title, price, media }) => ({
-      title,
-      subtitle: price !== undefined ? formatPrice(price) : undefined,
-      media,
-    }),
+    select: { title: "name", price: "price", media: "images.0", variants: "variants" },
+    prepare: ({ title, price, media, variants }) => {
+      const low = ((variants ?? []) as { stock?: number }[]).filter(
+        (variant) => (variant.stock ?? 0) <= LOW_STOCK_THRESHOLD,
+      ).length;
+      const parts = [
+        price !== undefined ? formatPrice(price) : null,
+        low > 0 ? `${low} low-stock variant${low > 1 ? "s" : ""}` : null,
+      ];
+      return { title, subtitle: parts.filter(Boolean).join(" · ") || undefined, media };
+    },
   },
 });

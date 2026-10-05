@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 import { FormEvent, Fragment, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
   SHIPPING_METHODS,
-  cartDiscount,
   cartSubtotal,
   cartTotal,
   type ShippingMethodId,
 } from "@/lib/cart-data";
 import { useCartHydrated, useCartStore, type CartLine } from "@/lib/cart/store";
+import { couponDiscount, toAppliedCoupon } from "@/lib/coupons/discount";
 import { colorLabel } from "@/lib/catalog";
 import {
   PAYMENT_METHODS,
@@ -55,6 +55,8 @@ export function CheckoutView({
   const hydrated = useCartHydrated();
   const items = useCartStore((state) => state.items);
   const replace = useCartStore((state) => state.replace);
+  const coupon = useCartStore((state) => state.coupon);
+  const setCoupon = useCartStore((state) => state.setCoupon);
 
   const [shipping, setShipping] = useState<ShippingMethodId>("standard");
   const [payment, setPayment] = useState<PaymentMethodId>("vnpay");
@@ -76,7 +78,7 @@ export function CheckoutView({
   const refreshed = useRef(false);
 
   const subtotal = useMemo(() => cartSubtotal(items), [items]);
-  const discount = useMemo(() => cartDiscount(subtotal), [subtotal]);
+  const discount = useMemo(() => couponDiscount(coupon, subtotal), [coupon, subtotal]);
   const deliveryFee = SHIPPING_METHODS[shipping].fee;
   const total = cartTotal(subtotal, discount, deliveryFee);
 
@@ -84,16 +86,18 @@ export function CheckoutView({
     if (!hydrated || refreshed.current || items.length === 0) return;
     refreshed.current = true;
     const seenPrices = Object.fromEntries(items.map((item) => [item.sku, item.price]));
-    refreshCart({ items: toLineInput(items), seenPrices })
+    const couponCode = coupon?.code;
+    refreshCart({ items: toLineInput(items), seenPrices, couponCode })
       .then((quote) => {
         if (!quote) return;
         replace(quote.lines);
+        if (couponCode) setCoupon(toAppliedCoupon(quote.coupon));
         if (quote.issues.length > 0) {
           setNotices(quote.issues.map((issue) => issue.message));
         }
       })
       .catch(() => {});
-  }, [hydrated, items, replace]);
+  }, [hydrated, items, coupon, replace, setCoupon]);
 
   useEffect(() => {
     if (notices.length === 0) return;
@@ -131,6 +135,7 @@ export function CheckoutView({
           ...parsed.data,
           items: toLineInput(items),
           expectedTotal: total,
+          couponCode: coupon?.code ?? null,
         });
 
         switch (result.status) {
@@ -140,6 +145,7 @@ export function CheckoutView({
             break;
           case "changed":
             replace(result.quote.lines);
+            if (coupon) setCoupon(toAppliedCoupon(result.quote.coupon));
             setNotices([
               result.message,
               ...result.quote.issues.map((issue) => issue.message),
@@ -152,6 +158,10 @@ export function CheckoutView({
           case "placed":
             setLeaving(true);
             router.push(`/order/${result.orderId}/success`);
+            break;
+          case "pay":
+            setLeaving(true);
+            router.push(`/order/${result.orderId}/pay`);
             break;
           case "error":
             setNotices([result.message]);

@@ -1,8 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
-import { cartDiscount, cartSubtotal, cartTotal } from "@/lib/cart-data";
+import { AnimatePresence, motion } from "motion/react";
+import { EASE_OUT } from "@/components/motion/Reveal";
+import { cartSubtotal, cartTotal } from "@/lib/cart-data";
 import { useCartHydrated, useCartStore } from "@/lib/cart/store";
+import { couponDiscount } from "@/lib/coupons/discount";
 import { Container } from "@/components/layout/Container";
 import { ShopBreadcrumb } from "@/components/shop/ShopBreadcrumb";
 import { Button } from "@/components/ui/Button";
@@ -14,9 +17,10 @@ export function CartView() {
   const items = useCartStore((state) => state.items);
   const updateQty = useCartStore((state) => state.updateQty);
   const remove = useCartStore((state) => state.remove);
+  const coupon = useCartStore((state) => state.coupon);
 
   const subtotal = useMemo(() => cartSubtotal(items), [items]);
-  const discount = useMemo(() => cartDiscount(subtotal), [subtotal]);
+  const discount = useMemo(() => couponDiscount(coupon, subtotal), [coupon, subtotal]);
   const total = useMemo(
     () => cartTotal(subtotal, discount),
     [subtotal, discount],
@@ -44,16 +48,23 @@ export function CartView() {
         ) : (
           <div className="mt-5 flex flex-col items-stretch gap-5 xl:mt-6 xl:flex-row xl:items-start">
             <div className="flex min-w-0 flex-1 flex-col gap-4 rounded-[20px] border border-line px-3.5 py-3.5 xl:gap-6 xl:px-6 xl:py-5">
-              {items.map((item, index) => (
-                <div key={item.sku}>
-                  {index > 0 ? <hr className="mb-4 border-line xl:mb-6" /> : null}
-                  <CartLineItem
-                    item={item}
-                    onQty={updateQty}
-                    onRemove={remove}
-                  />
-                </div>
-              ))}
+              <AnimatePresence initial={false}>
+                {items.map((item, index) => (
+                  <motion.div
+                    key={item.sku}
+                    className="overflow-hidden"
+                    exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                    transition={{ duration: 0.35, ease: EASE_OUT }}
+                  >
+                    {index > 0 ? <hr className="mb-4 border-line xl:mb-6" /> : null}
+                    <CartLineItem
+                      item={item}
+                      onQty={updateQty}
+                      onRemove={remove}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
 
             <OrderSummary

@@ -14,7 +14,7 @@ const LINKS = [
 const PILL =
   "inline-flex h-10 shrink-0 items-center rounded-[62px] px-5 text-sm font-medium transition-colors xl:h-11 xl:text-base";
 
-export function AccountNav() {
+export function AccountNav({ showAdmin = false }: { showAdmin?: boolean }) {
   const pathname = usePathname();
 
   async function signOut() {
@@ -38,6 +38,11 @@ export function AccountNav() {
           </Link>
         );
       })}
+      {showAdmin ? (
+        <Link href="/admin" className={`${PILL} border border-line text-black hover:bg-black/[0.04]`}>
+          Quản trị
+        </Link>
+      ) : null}
       <form action={signOut} className="ml-auto shrink-0">
         <button type="submit" className={`${PILL} text-text-60 hover:text-black`}>
           Đăng xuất

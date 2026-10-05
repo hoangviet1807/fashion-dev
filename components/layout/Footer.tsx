@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 import { SocialLinks } from "@/components/layout/SocialLinks";
 import { PaymentBadges } from "@/components/layout/PaymentBadges";
@@ -29,10 +30,8 @@ export function Footer() {
                 </h3>
                 <ul className="flex flex-col gap-[13px] text-base leading-[19px] text-text-60">
                   {column.links.map((link) => (
-                    <li key={link}>
-                      <a href={`#${link.toLowerCase().replace(/\s+/g, "-")}`}>
-                        {link}
-                      </a>
+                    <li key={link.href}>
+                      <Link href={link.href}>{link.label}</Link>
                     </li>
                   ))}
                 </ul>

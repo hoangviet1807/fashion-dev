@@ -17,6 +17,7 @@
   --color-text-40: rgb(0 0 0 / 40%);
   --color-line: rgb(0 0 0 / 10%);
   --color-star: #ffc633;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --font-sans: var(--font-body), Arial, Helvetica, sans-serif;
   --font-display: var(--font-heading), Arial, Helvetica, sans-serif;
   --radius-pill: 62px;
@@ -24,14 +25,117 @@
   --radius-panel: 40px;
 }
 
+@theme {
+  --animate-rise: rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-settle: settle 1.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-twinkle: twinkle 6s ease-in-out infinite;
+  --animate-page-in: page-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(28px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes settle {
+    from {
+      transform: scale(1.08);
+    }
+    to {
+      transform: scale(1);
+    }
+  }
+
+  @keyframes twinkle {
+    0%,
+    100% {
+      transform: scale(1) rotate(0deg);
+    }
+    50% {
+      transform: scale(0.82) rotate(45deg);
+    }
+  }
+
+  @keyframes page-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
 html {
   scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+}
+
+/* Tailwind v4 preflight resets buttons to `cursor: default`. */
+@layer base {
+  button,
+  [role="button"],
+  [role="menuitem"],
+  [role="option"],
+  [role="tab"],
+  select,
+  summary,
+  label:has(> select),
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="range"] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  select:disabled,
+  label:has(> select:disabled),
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+  a,
+  button,
+  select,
+  summary,
+  input,
+  [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-foreground);
+    outline-offset: 3px;
+  }
+
+  input:focus-visible,
+  select:focus-visible {
+    outline: none;
+  }
+
+  ::selection {
+    background: #000;
+    color: #fff;
+  }
 }
 
 .font-display {

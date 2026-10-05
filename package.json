@@ -9,12 +9,18 @@
     "lint": "eslint",
     "typegen": "sanity schema extract --enforce-required-fields && sanity typegen generate",
     "seed": "sanity exec scripts/seed-sanity.ts --with-user-token",
+    "seed:pages": "sanity exec scripts/seed-pages.ts --with-user-token",
     "migrate:prices-vnd": "sanity exec scripts/migrate-prices-vnd.ts --with-user-token",
+    "migrate:brands": "sanity exec scripts/migrate-brands.ts --with-user-token",
     "address:update": "node scripts/fetch-vn-divisions.mjs",
     "db:up": "docker compose up -d db",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "coupon:create": "node scripts/create-coupon.mts",
+    "order:ship": "tsx scripts/ship-order.mts",
+    "user:role": "node scripts/set-role.mts",
+    "reviews:sync": "node scripts/sync-review-ratings.mts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.3",
@@ -23,10 +29,12 @@
     "@sanity/image-url": "^2.1.1",
     "@sanity/vision": "^5.31.2",
     "drizzle-orm": "^0.45.3",
+    "motion": "^14.0.0",
     "next": "16.3.4",
     "next-auth": "5.0.0-beta.32",
     "next-sanity": "^13.3.4",
     "postgres": "^3.4.9",
+    "qrcode": "^1.5.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "resend": "^6.30.0",
@@ -44,6 +52,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   },
   "packageManager": "pnpm@11.6.0"

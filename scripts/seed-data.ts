@@ -16,12 +16,30 @@ export const DRESS_STYLES = [
 ];
 
 export const BRANDS = [
-  { name: "Versace", logo: "brands/versace.svg" },
-  { name: "Zara", logo: "brands/zara.svg" },
-  { name: "Gucci", logo: "brands/gucci.svg" },
-  { name: "Prada", logo: "brands/prada.svg" },
-  { name: "Calvin Klein", logo: "brands/calvin-klein.svg" },
+  { name: "Versace", slug: "versace", logo: "brands/versace.svg" },
+  { name: "Zara", slug: "zara", logo: "brands/zara.svg" },
+  { name: "Gucci", slug: "gucci", logo: "brands/gucci.svg" },
+  { name: "Prada", slug: "prada", logo: "brands/prada.svg" },
+  { name: "Calvin Klein", slug: "calvin-klein", logo: "brands/calvin-klein.svg" },
 ];
+
+/** Sample brand per product slug, so every brand filter has results. */
+export const PRODUCT_BRANDS: Record<string, string> = {
+  "gradient-tee": "zara",
+  "polo-tipping": "calvin-klein",
+  "black-striped": "zara",
+  "skinny-jeans": "calvin-klein",
+  "checkered-shirt": "prada",
+  "sleeve-striped": "zara",
+  "vertical-striped": "prada",
+  "courage-tee": "versace",
+  bermuda: "zara",
+  "tape-tshirt": "calvin-klein",
+  "faded-jeans": "versace",
+  "classic-hoodie": "gucci",
+  "zip-hoodie": "gucci",
+  "one-life": "versace",
+};
 
 export const TESTIMONIALS = [
   {

@@ -1,12 +1,15 @@
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomInt } from "node:crypto";
+import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { orderItems, orders, payments } from "@/lib/db/schema";
 import type { Quote } from "@/lib/checkout/quote";
 import type { CheckoutDetails } from "@/lib/checkout/schema";
-import { sendOrderConfirmation } from "@/lib/email/send-order-confirmation";
+import { claimCoupon } from "@/lib/coupons/server";
+import { sendOrderConfirmation } from "@/lib/email/order-notifications";
 import { SITE_LOCALE } from "@/lib/locale";
 import { STORE_CURRENCY } from "@/lib/money";
 import { createMomoPayment } from "@/lib/payments/momo";
+import { PAYOS_DESCRIPTION_MAX, createPayosPayment } from "@/lib/payments/payos";
 import { VNPAY_EXPIRE_MINUTES, buildVnpayUrl } from "@/lib/payments/vnpay";
 import { siteUrl } from "@/lib/site-url";
 import { commitReservations, reserveStock } from "./inventory";
@@ -14,13 +17,16 @@ import { abandonPayment } from "./payments";
 
 export type PlaceOrderResult =
   | { status: "placed"; orderId: string }
-  | { status: "redirect"; orderId: string; url: string };
+  | { status: "redirect"; orderId: string; url: string }
+  /** Bank transfer: the shopper scans the VietQR code on `/order/[id]/pay`. */
+  | { status: "pay"; orderId: string };
 
 /**
  * Creates the order, its items, a pending payment and stock reservations in one
- * transaction. COD orders are committed immediately; VNPay / MoMo orders wait for
- * the provider callback. Throws InsufficientStockError when stock can't be held,
- * MomoRequestError when MoMo rejects the payment request.
+ * transaction. COD orders are committed immediately; VNPay / MoMo / payOS orders
+ * wait for the provider callback. Throws InsufficientStockError when stock can't
+ * be held, CouponUnavailableError when the coupon stopped applying,
+ * MomoRequestError / PayosRequestError when the provider rejects the request.
  */
 export async function placeOrder({
   details,
@@ -41,6 +47,8 @@ export async function placeOrder({
   const expiresAt = new Date(Date.now() + VNPAY_EXPIRE_MINUTES * 60 * 1000);
 
   const { order, reference } = await getDb().transaction(async (tx) => {
+    if (quote.coupon) await claimCoupon(tx, quote.coupon.id, quote.subtotal);
+
     const [order] = await tx
       .insert(orders)
       .values({
@@ -65,6 +73,8 @@ export async function placeOrder({
         discount: quote.discount,
         deliveryFee: quote.deliveryFee,
         total: quote.total,
+        couponId: quote.coupon?.id ?? null,
+        couponCode: quote.coupon?.code ?? null,
       })
       .returning();
 
@@ -87,7 +97,10 @@ export async function placeOrder({
 
     const reference = isCod
       ? `COD${order.number}`
-      : `${order.number}${randomBytes(4).toString("hex").toUpperCase()}`;
+      : details.payment === "payos"
+        ? // payOS needs a numeric orderCode that stays unique even if order numbers restart.
+          `${order.number}${String(randomInt(10_000)).padStart(4, "0")}`
+        : `${order.number}${randomBytes(4).toString("hex").toUpperCase()}`;
 
     await tx.insert(payments).values({
       orderId: order.id,
@@ -95,6 +108,7 @@ export async function placeOrder({
       amount: quote.total,
       currency: STORE_CURRENCY,
       reference,
+      expiresAt: isCod ? null : expiresAt,
     });
 
     return { order, reference };
@@ -104,6 +118,30 @@ export async function placeOrder({
     await commitReservations(order.id);
     await sendOrderConfirmation(order.id);
     return { status: "placed", orderId: order.id };
+  }
+
+  if (details.payment === "payos") {
+    try {
+      const payPage = `${siteUrl()}/order/${order.id}/pay`;
+      const transfer = await createPayosPayment({
+        orderCode: Number(reference),
+        amountVnd: quote.total,
+        description: `DH${order.number}`.slice(0, PAYOS_DESCRIPTION_MAX),
+        returnUrl: payPage,
+        cancelUrl: payPage,
+        expiresAt,
+        buyer: {
+          name: `${details.lastName} ${details.firstName}`,
+          email: details.email,
+          phone: details.phone,
+        },
+      });
+      await getDb().update(payments).set({ transfer }).where(eq(payments.reference, reference));
+      return { status: "pay", orderId: order.id };
+    } catch (error) {
+      await abandonPayment(reference);
+      throw error;
+    }
   }
 
   const orderInfo = `Thanh toan don hang ${order.number}`;

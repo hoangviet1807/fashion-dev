@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { COUPON_CODE_MAX } from "@/lib/coupons/discount";
 
 z.config(z.locales.vi());
 
@@ -10,6 +11,10 @@ export const PAYMENT_METHODS = {
   momo: {
     label: "Ví MoMo",
     note: "Thanh toán bằng ứng dụng MoMo hoặc quét mã QR.",
+  },
+  payos: {
+    label: "Chuyển khoản ngân hàng (VietQR)",
+    note: "Quét mã QR bằng ứng dụng ngân hàng bất kỳ, xác nhận tự động.",
   },
   cod: { label: "Thanh toán khi nhận hàng (COD)", note: "Trả tiền mặt khi nhận hàng." },
 } as const;
@@ -71,7 +76,7 @@ export const checkoutDetailsSchema = z.object({
   email: z.email("Email không hợp lệ.").max(254, "Email quá dài."),
   ...addressFields,
   shipping: z.enum(["standard", "express"], "Vui lòng chọn phương thức giao hàng."),
-  payment: z.enum(["vnpay", "momo", "cod"], "Vui lòng chọn phương thức thanh toán."),
+  payment: z.enum(["vnpay", "momo", "payos", "cod"], "Vui lòng chọn phương thức thanh toán."),
   vnpayMethod: z
     .enum(["any", "VNPAYQR", "VNBANK", "INTCARD"], "Vui lòng chọn hình thức thanh toán VNPay.")
     .default("any"),
@@ -81,6 +86,7 @@ export const checkoutSchema = checkoutDetailsSchema.extend({
   items: checkoutItemsSchema,
   /** Total the customer saw; the server rejects the order if it differs. */
   expectedTotal: z.number().int().nonnegative(),
+  couponCode: z.string().trim().max(COUPON_CODE_MAX).nullish(),
 });
 
 export type CheckoutDetails = z.infer<typeof checkoutDetailsSchema>;

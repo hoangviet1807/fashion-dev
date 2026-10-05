@@ -1,6 +1,6 @@
 import { render } from "@react-email/render";
-import { Resend } from "resend";
 import { PasswordResetEmail } from "./PasswordResetEmail";
+import { sendEmail } from "./send";
 
 export async function sendPasswordReset({
   to,
@@ -13,19 +13,10 @@ export async function sendPasswordReset({
   resetUrl: string;
   expiresInMinutes: number;
 }) {
-  const subject = "Đặt lại mật khẩu SHOP.CO";
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.info(`[email] RESEND_API_KEY not set; would send "${subject}" to ${to}: ${resetUrl}`);
-    return;
-  }
-
-  const html = await render(PasswordResetEmail({ name, resetUrl, expiresInMinutes }));
-  const { error } = await new Resend(apiKey).emails.send({
-    from: process.env.EMAIL_FROM ?? "SHOP.CO <onboarding@resend.dev>",
+  await sendEmail({
     to,
-    subject,
-    html,
+    subject: "Đặt lại mật khẩu SHOP.CO",
+    html: await render(PasswordResetEmail({ name, resetUrl, expiresInMinutes })),
+    devNote: resetUrl,
   });
-  if (error) throw new Error(error.message);
 }

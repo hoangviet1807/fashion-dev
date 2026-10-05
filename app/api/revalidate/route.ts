@@ -6,7 +6,7 @@ type WebhookPayload = { _type?: string; slug?: string };
 
 /**
  * Sanity GROQ-powered webhook target (production fallback to <SanityLive />).
- * Webhook filter: `_type in ["product", "category", "dressStyle", "brand", "testimonial", "siteSettings"]`
+ * Webhook filter: `_type in ["product", "category", "dressStyle", "brand", "testimonial", "page", "siteSettings"]`
  * Projection: `{ _type, "slug": slug.current }`
  */
 export async function POST(request: NextRequest) {

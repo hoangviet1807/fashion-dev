@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getOrderWithItems } from "@/lib/orders/queries";
 import { OrderSuccessView } from "@/components/order/OrderSuccessView";
 
@@ -16,6 +16,9 @@ export default async function OrderSuccessPage({
   const { id } = await params;
   const data = await getOrderWithItems(id);
   if (!data) notFound();
+  if (data.order.paymentMethod === "payos" && data.order.status === "pending_payment") {
+    redirect(`/order/${id}/pay`);
+  }
 
   return <OrderSuccessView order={data.order} items={data.items} />;
 }

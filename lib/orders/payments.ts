@@ -1,8 +1,14 @@
-import { eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { orders, payments, type Payment } from "@/lib/db/schema";
-import { sendOrderConfirmation } from "@/lib/email/send-order-confirmation";
+import { sendOrderConfirmation } from "@/lib/email/order-notifications";
 import { verifyMomoResult } from "@/lib/payments/momo";
+import {
+  cancelPayosPayment,
+  getPayosPayment,
+  verifyPayosWebhook,
+  type PayosPaymentInfo,
+} from "@/lib/payments/payos";
 import { verifyVnpayCallback } from "@/lib/payments/vnpay";
 import { commitReservations, releaseReservations } from "./inventory";
 
@@ -86,20 +92,24 @@ async function applyPaymentResult(
   return outcome;
 }
 
-/** Marks a payment that never reached the provider as failed and frees its stock. */
-export async function abandonPayment(reference: string) {
-  await getDb().transaction(async (tx) => {
+/**
+ * Marks a still-pending payment as failed (never reached the provider, expired or
+ * cancelled) and frees its stock. Returns false if it had already settled.
+ */
+export async function abandonPayment(reference: string): Promise<boolean> {
+  return getDb().transaction(async (tx) => {
     const [payment] = await tx
       .update(payments)
       .set({ status: "failed" })
-      .where(eq(payments.reference, reference))
+      .where(and(eq(payments.reference, reference), eq(payments.status, "pending")))
       .returning();
-    if (!payment) return;
+    if (!payment) return false;
     await tx
       .update(orders)
       .set({ status: "payment_failed" })
       .where(eq(orders.id, payment.orderId));
     await releaseReservations(tx, payment.orderId);
+    return true;
   });
 }
 
@@ -151,4 +161,111 @@ export async function handleMomoResult(
     transactionId: result.transactionId,
     raw: result.raw,
   });
+}
+
+/**
+ * Applies a payOS webhook; null when the signature is invalid. payOS only reports
+ * received transfers, so a non-success body leaves the payment pending.
+ */
+export async function handlePayosWebhook(
+  body: Record<string, unknown>,
+): Promise<PaymentOutcome | null> {
+  const result = verifyPayosWebhook(body);
+  if (!result) return null;
+
+  return applyPaymentResult("payos", {
+    reference: result.reference,
+    amount: result.amountVnd,
+    success: result.success,
+    pending: !result.success,
+    transactionId: result.transactionId,
+    raw: result.raw,
+  });
+}
+
+export type PayosPaymentState = {
+  state: "pending" | "paid" | "expired";
+  payment: Payment;
+};
+
+const PAYOS_CLOSED: PayosPaymentInfo["status"][] = ["CANCELLED", "EXPIRED", "FAILED"];
+
+async function latestPayosPayment(orderId: string) {
+  const [payment] = await getDb()
+    .select()
+    .from(payments)
+    .where(and(eq(payments.orderId, orderId), eq(payments.provider, "payos")))
+    .orderBy(desc(payments.createdAt))
+    .limit(1);
+  return payment ?? null;
+}
+
+function settledState(payment: Payment): PayosPaymentState {
+  return { state: payment.status === "succeeded" ? "paid" : "expired", payment };
+}
+
+/**
+ * Brings a payOS payment up to date for the pay page: asks payOS for the link
+ * status (so it works without a public webhook URL), applies a received transfer,
+ * and fails the payment once the link is closed or past `expiresAt`.
+ */
+export async function syncPayosPayment(orderId: string): Promise<PayosPaymentState | null> {
+  const payment = await latestPayosPayment(orderId);
+  if (!payment) return null;
+  if (payment.status !== "pending") return settledState(payment);
+
+  let info: PayosPaymentInfo | null = null;
+  try {
+    info = await getPayosPayment(payment.reference);
+  } catch (error) {
+    console.error(`[payos] Status check failed for order ${orderId}`, error);
+  }
+
+  if (info?.status === "PAID") {
+    const outcome = await applyPaymentResult("payos", {
+      reference: payment.reference,
+      amount: info.amountPaid,
+      success: true,
+      transactionId: info.transactionId,
+      raw: { status: info.status, amountPaid: String(info.amountPaid) },
+    });
+    if (outcome.status === "amount_mismatch") {
+      console.error(`[payos] Paid amount ${info.amountPaid} differs for order ${orderId}`);
+    }
+  } else {
+    const closed = info !== null && PAYOS_CLOSED.includes(info.status);
+    const expired = payment.expiresAt !== null && payment.expiresAt.getTime() <= Date.now();
+    if (closed || expired) {
+      if (!closed) {
+        await cancelPayosPayment(payment.reference, "Hết thời gian thanh toán").catch((error) =>
+          console.error(`[payos] Cancel failed for order ${orderId}`, error),
+        );
+      }
+      if (info?.status === "UNDERPAID") {
+        console.error(`[payos] Order ${orderId} expired after a partial transfer (${info.amountPaid})`);
+      }
+      await abandonPayment(payment.reference);
+    }
+  }
+
+  const current = await latestPayosPayment(orderId);
+  if (!current) return null;
+  return current.status === "pending" ? { state: "pending", payment: current } : settledState(current);
+}
+
+/** Shopper gave up on the transfer: closes the payOS link and frees the stock. */
+export async function cancelPayosOrder(orderId: string): Promise<PayosPaymentState | null> {
+  const payment = await latestPayosPayment(orderId);
+  if (!payment) return null;
+  if (payment.status === "pending") {
+    // A transfer may have landed moments ago; never cancel a paid link.
+    const synced = await syncPayosPayment(orderId);
+    if (!synced || synced.state !== "pending") return synced;
+    await cancelPayosPayment(payment.reference, "Khách đổi phương thức thanh toán").catch((error) =>
+      console.error(`[payos] Cancel failed for order ${orderId}`, error),
+    );
+    await abandonPayment(payment.reference);
+  }
+  const current = await latestPayosPayment(orderId);
+  return current ? settledState(current) : null;
 }

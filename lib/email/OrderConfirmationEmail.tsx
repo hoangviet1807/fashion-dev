@@ -6,6 +6,7 @@ import { formatPrice } from "@/lib/money";
 const PAYMENT_LABELS: Record<Order["paymentMethod"], string> = {
   vnpay: "Đã thanh toán qua VNPay",
   momo: "Đã thanh toán qua MoMo",
+  payos: "Đã thanh toán bằng chuyển khoản ngân hàng",
   cod: "Thanh toán khi nhận hàng (COD)",
 };
 
@@ -64,7 +65,14 @@ export function OrderConfirmationEmail({
                   <tbody>
                     {[
                       ["Tạm tính", price(order.subtotal)],
-                      ["Giảm giá", `-${price(order.discount)}`],
+                      ...(order.discount > 0 || order.couponCode
+                        ? [
+                            [
+                              order.couponCode ? `Giảm giá (${order.couponCode})` : "Giảm giá",
+                              `-${price(order.discount)}`,
+                            ],
+                          ]
+                        : []),
                       ["Phí vận chuyển", price(order.deliveryFee)],
                       ["Tổng cộng", price(order.total)],
                     ].map(([label, value], index, rows) => (

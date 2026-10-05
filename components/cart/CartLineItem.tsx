@@ -6,6 +6,7 @@ import { colorLabel } from "@/lib/catalog";
 import { formatPrice } from "@/lib/money";
 import type { CartLine } from "@/lib/cart/store";
 import { Icon } from "@/components/ui/Icon";
+import { STEPPER_BUTTON } from "@/components/ui/choice";
 
 export function CartLineItem({
   item,
@@ -54,7 +55,7 @@ export function CartLineItem({
             type="button"
             aria-label={`Xoá ${item.name}`}
             onClick={() => onRemove(item.sku)}
-            className="shrink-0"
+            className="relative isolate shrink-0 rounded-full transition-transform duration-200 before:absolute before:-inset-2 before:-z-10 before:rounded-full before:bg-discount-bg before:opacity-0 before:transition-opacity before:duration-200 before:content-[''] hover:before:opacity-100 active:scale-90 motion-reduce:active:scale-100"
           >
             <Icon src="/icons/trash.svg" size={24} />
           </button>
@@ -70,7 +71,7 @@ export function CartLineItem({
               type="button"
               aria-label="Giảm số lượng"
               onClick={() => onQty(item.sku, item.quantity - 1)}
-              className="text-xl leading-none"
+              className={STEPPER_BUTTON}
             >
               −
             </button>
@@ -80,7 +81,7 @@ export function CartLineItem({
               aria-label="Tăng số lượng"
               onClick={() => onQty(item.sku, item.quantity + 1)}
               disabled={item.quantity >= item.stock}
-              className="text-xl leading-none"
+              className={STEPPER_BUTTON}
             >
               +
             </button>

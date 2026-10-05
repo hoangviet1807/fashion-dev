@@ -25,7 +25,11 @@ export function TextField({
 
   return (
     <label
-      className={`flex h-12 items-center gap-3 overflow-clip rounded-[62px] px-4 py-3 ${tone === "white" ? "bg-white" : "bg-muted"} ${error ? "ring-1 ring-discount" : ""} ${className}`}
+      className={`flex h-12 cursor-text items-center gap-3 overflow-clip rounded-[62px] px-4 py-3 transition-[background-color,box-shadow] duration-200 ${
+        tone === "white"
+          ? "bg-white focus-within:shadow-[0_0_0_3px_rgb(255_255_255/0.35)]"
+          : "bg-muted not-focus-within:hover:bg-black/[0.07] focus-within:bg-white"
+      } ${error ? "ring-1 ring-discount focus-within:ring-2" : tone === "white" ? "" : "focus-within:ring-2 focus-within:ring-black"} ${className}`}
     >
       {icon ? (
         <span className="relative size-6 shrink-0 overflow-clip">

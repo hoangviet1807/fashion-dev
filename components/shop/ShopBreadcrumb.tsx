@@ -4,7 +4,7 @@ import { Icon } from "@/components/ui/Icon";
 export function ShopBreadcrumb({ current }: { current: string }) {
   return (
     <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-base">
-      <Link href="/" className="text-text-60">
+      <Link href="/" className="text-text-60 transition-colors duration-150 hover:text-black">
         Trang chủ
       </Link>
       <span className="relative size-4 rotate-[-90deg] overflow-clip">
@@ -36,7 +36,7 @@ export function Chevron({
     <Icon
       src="/icons/chevron.svg"
       size={size}
-      className={rotate}
+      className={`transition-transform duration-300 ease-out-expo motion-reduce:transition-none ${rotate}`}
     />
   );
 }

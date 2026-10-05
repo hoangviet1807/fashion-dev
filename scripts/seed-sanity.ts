@@ -13,6 +13,7 @@ import {
   DEFAULT_DETAILS,
   DRESS_STYLES,
   NEW_ARRIVALS,
+  PRODUCT_BRANDS,
   PRODUCT_FAQS,
   PRODUCTS,
   TESTIMONIALS,
@@ -101,12 +102,15 @@ async function main() {
   const categoryIds = await seedTaxonomy("category", CATEGORIES);
   const styleIds = await seedTaxonomy("dressStyle", DRESS_STYLES);
 
+  const brandIds = new Map<string, string>();
   for (const [index, brand] of BRANDS.entries()) {
-    await upsert("brand", "name", brand.name, {
+    const id = await upsert("brand", "name", brand.name, {
       name: brand.name,
+      slug: { _type: "slug", current: brand.slug },
       logo: imageField(await uploadImage(brand.logo)),
       order: index,
     });
+    brandIds.set(brand.slug, id);
   }
   console.log(`✓ ${BRANDS.length} brands`);
 
@@ -134,10 +138,9 @@ async function main() {
       ...(product.compareAtPrice ? { compareAtPrice: product.compareAtPrice } : {}),
       ...(product.discount ? { discount: product.discount } : {}),
       category: ref(categoryIds.get(product.category)!),
+      brand: ref(brandIds.get(PRODUCT_BRANDS[product.slug])!),
       dressStyles: product.styles.map((style) => ref(styleIds.get(style)!, style)),
       popularity: PRODUCTS.length - index,
-      rating: product.rating,
-      reviewCount: 451,
       variants,
       details: DEFAULT_DETAILS,
     });

@@ -18,6 +18,9 @@ export type ShopFacets = {
 
 export type ShopQuery = {
   q?: string;
+  sale?: boolean;
+  /** Brand slug. */
+  brand?: string;
   style?: DressStyleId;
   category?: CategoryId;
   /** Set only after "Apply Filter"; color, size and price are applied together. */
@@ -28,7 +31,7 @@ export type ShopQuery = {
 
 export type ShopSearchParams = Record<string, string | string[] | undefined>;
 
-const SORTS: ProductSort[] = ["most-popular", "low-price", "high-price"];
+const SORTS: ProductSort[] = ["most-popular", "newest", "low-price", "high-price"];
 
 function first(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -45,13 +48,18 @@ function parsePrice(value: string | undefined): [number, number] | undefined {
 
 export function parseShopParams(params: ShopSearchParams): ShopQuery {
   const q = normalizeSearchQuery(first(params.q));
+  const sale = first(params.sale) === "1" || undefined;
+  const brandParam = first(params.brand)?.toLowerCase();
+  const brand = brandParam && /^[a-z0-9-]{1,96}$/.test(brandParam) ? brandParam : undefined;
   const styleParam = first(params.style);
   const categoryParam = first(params.category);
   const category = isCategory(categoryParam) ? categoryParam : undefined;
-  // Default to casual only when browsing by style; category-only and search keep all styles.
+  const sortParam = first(params.sort) as ProductSort | undefined;
+  const sort = sortParam && SORTS.includes(sortParam) ? sortParam : "most-popular";
+  // Default to casual only on the plain style listing; any other scope or a chosen sort keeps all styles.
   const style = isDressStyle(styleParam)
     ? styleParam
-    : category || q
+    : category || q || sale || brand || sort !== "most-popular"
       ? undefined
       : "casual";
 
@@ -67,16 +75,16 @@ export function parseShopParams(params: ShopSearchParams): ShopQuery {
       ? { color, size, price }
       : undefined;
 
-  const sortParam = first(params.sort) as ProductSort | undefined;
-  const sort = sortParam && SORTS.includes(sortParam) ? sortParam : "most-popular";
   const page = Math.max(1, Math.floor(Number(first(params.page)) || 1));
 
-  return { q, style, category, facets, sort, page };
+  return { q, sale, brand, style, category, facets, sort, page };
 }
 
 export function buildShopHref(query: Partial<ShopQuery>) {
   const params = new URLSearchParams();
   if (query.q) params.set("q", query.q);
+  if (query.sale) params.set("sale", "1");
+  if (query.brand) params.set("brand", query.brand);
   if (query.style) params.set("style", query.style);
   if (query.category) params.set("category", query.category);
   if (query.facets) {

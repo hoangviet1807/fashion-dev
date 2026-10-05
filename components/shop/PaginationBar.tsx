@@ -1,3 +1,6 @@
+const STEP =
+  "inline-flex h-9 items-center gap-2 rounded-lg border border-line px-3.5 text-sm font-medium transition-[background-color,border-color,transform] duration-150 hover:border-black/30 hover:bg-black/[0.03] active:scale-[0.97] disabled:opacity-40 disabled:hover:border-line disabled:hover:bg-transparent xl:h-10";
+
 function getPaginationItems(
   page: number,
   totalPages: number,
@@ -59,9 +62,9 @@ export function PaginationBar({
         type="button"
         onClick={() => onPage(Math.max(1, page - 1))}
         disabled={page <= 1}
-        className="inline-flex h-9 items-center gap-2 rounded-lg border border-line px-3.5 text-sm font-medium disabled:opacity-40 xl:h-10"
+        className={`group/prev ${STEP}`}
       >
-        <span className="relative size-5 rotate-90 overflow-clip">
+        <span className="relative size-5 rotate-90 overflow-clip transition-transform duration-200 group-hover/prev:-translate-x-0.5 motion-reduce:transition-none">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/icons/arrow-left.svg" alt="" width={20} height={20} className="size-full" />
         </span>
@@ -82,8 +85,10 @@ export function PaginationBar({
               key={item}
               type="button"
               onClick={() => onPage(item)}
-              className={`inline-flex size-9 items-center justify-center rounded-lg text-sm font-medium xl:size-10 ${
-                item === page ? "bg-muted text-black" : "text-text-40"
+              aria-current={item === page ? "page" : undefined}
+              aria-label={`Trang ${item}`}
+              className={`inline-flex size-9 items-center justify-center rounded-lg text-sm font-medium transition-[background-color,color,transform] duration-150 active:scale-95 xl:size-10 ${
+                item === page ? "bg-muted text-black" : "text-text-40 hover:bg-black/[0.04] hover:text-black"
               }`}
             >
               {item}
@@ -96,10 +101,10 @@ export function PaginationBar({
         type="button"
         onClick={() => onPage(Math.min(totalPages, page + 1))}
         disabled={page >= totalPages}
-        className="inline-flex h-9 items-center gap-2 rounded-lg border border-line px-3.5 text-sm font-medium disabled:opacity-40 xl:h-10"
+        className={`group/next ${STEP}`}
       >
         Sau
-        <span className="relative size-5 -rotate-90 overflow-clip">
+        <span className="relative size-5 -rotate-90 overflow-clip transition-transform duration-200 group-hover/next:translate-x-0.5 motion-reduce:transition-none">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/icons/arrow-right.svg" alt="" width={20} height={20} className="size-full" />
         </span>

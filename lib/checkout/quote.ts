@@ -2,24 +2,29 @@ import { client } from "@/sanity/lib/client";
 import { CHECKOUT_VARIANTS_QUERY } from "@/sanity/lib/queries";
 import {
   SHIPPING_METHODS,
-  cartDiscount,
   cartSubtotal,
   cartTotal,
   type ShippingMethodId,
 } from "@/lib/cart-data";
 import type { CartLine } from "@/lib/cart/store";
+import type { AppliedCoupon } from "@/lib/coupons/discount";
+import { checkCoupon } from "@/lib/coupons/server";
 import { formatPrice } from "@/lib/money";
 
-export type QuoteIssue = {
-  sku: string;
-  name: string;
-  kind: "unavailable" | "insufficient_stock" | "price_changed";
-  message: string;
-};
+export type QuoteIssue =
+  | {
+      sku: string;
+      name: string;
+      kind: "unavailable" | "insufficient_stock" | "price_changed";
+      message: string;
+    }
+  | { kind: "coupon"; message: string };
 
 export type Quote = {
   lines: CartLine[];
   issues: QuoteIssue[];
+  /** Null when no code was given or it no longer applies (see `issues`). */
+  coupon: (AppliedCoupon & { id: string }) | null;
   subtotal: number;
   discount: number;
   deliveryFee: number;
@@ -50,6 +55,7 @@ export async function quoteCart(
   items: { sku: string; quantity: number }[],
   shipping: ShippingMethodId = "standard",
   seenPrices: Record<string, number> = {},
+  couponCode?: string | null,
 ): Promise<Quote> {
   const requested = new Map<string, number>();
   for (const item of items) {
@@ -108,12 +114,24 @@ export async function quoteCart(
   }
 
   const subtotal = cartSubtotal(lines);
-  const discount = cartDiscount(subtotal);
   const deliveryFee = SHIPPING_METHODS[shipping].fee;
+
+  let coupon: Quote["coupon"] = null;
+  let discount = 0;
+  if (couponCode && lines.length > 0) {
+    const check = await checkCoupon(couponCode, subtotal);
+    if (check.ok) {
+      coupon = check.coupon;
+      discount = check.discount;
+    } else {
+      issues.push({ kind: "coupon", message: `${check.message} Mã đã được gỡ khỏi giỏ hàng.` });
+    }
+  }
 
   return {
     lines,
     issues,
+    coupon,
     subtotal,
     discount,
     deliveryFee,

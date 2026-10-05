@@ -7,8 +7,8 @@ import {
   SHOP_PRODUCTS_QUERY,
 } from "@/sanity/lib/queries";
 import type { SHOP_PRODUCTS_QUERY_RESULT } from "@/sanity.types";
-import { PLACEHOLDER_REVIEWS } from "@/lib/data/placeholder-reviews";
 import { discountPercent, sortSizes } from "@/lib/product";
+import { getProductReviews, type ProductReviews } from "@/lib/reviews/server";
 import { searchTerms } from "@/lib/search";
 import type {
   Product,
@@ -55,6 +55,8 @@ export async function getProducts(
     params: {
       terms,
       altTerms,
+      sale: filters.sale ?? false,
+      brand: filters.brand ?? null,
       category: filters.category ?? null,
       style: filters.style ?? null,
       color: filters.color ?? null,
@@ -65,7 +67,7 @@ export async function getProducts(
       start,
       end: start + pageSize,
     },
-    tags: ["product", "category", "dressStyle"],
+    tags: ["product", "category", "dressStyle", "brand"],
     stega: false,
   });
 
@@ -85,13 +87,15 @@ export async function getProductBySlug(
 
   const summary = toSummary(data);
   const images = data.images.filter((image): image is string => Boolean(image));
+  const reviews = await loadReviews(slug);
 
   return {
     ...summary,
+    rating: reviews ? reviews.summary.average : summary.rating,
     description: data.description ?? "",
     categoryTitle: data.categoryTitle ?? data.category,
     images: images.length > 0 ? images : [summary.image],
-    reviewCount: data.reviewCount ?? 0,
+    reviewCount: reviews ? reviews.summary.count : (data.reviewCount ?? 0),
     variants: data.variants,
     details: {
       material: data.details?.material ?? [],
@@ -100,8 +104,18 @@ export async function getProductBySlug(
       features: data.details?.features ?? [],
     },
     faqs: data.faqs ?? [],
-    reviews: PLACEHOLDER_REVIEWS,
+    reviews: reviews?.page ?? { items: [], total: 0 },
   };
+}
+
+/** Reviews live in Postgres; the page still renders (with Sanity's rating) if it is unreachable. */
+async function loadReviews(slug: string): Promise<ProductReviews | null> {
+  try {
+    return await getProductReviews(slug);
+  } catch (error) {
+    console.error(`[reviews] Failed to load reviews for ${slug}`, error);
+    return null;
+  }
 }
 
 export async function getAllProductSlugs(): Promise<string[]> {

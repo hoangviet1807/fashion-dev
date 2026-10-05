@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Button } from "@/components/ui/Button";
+import { CountUp } from "@/components/motion/CountUp";
 
 const stats = [
   { value: "200+", label: "Thương hiệu quốc tế" },
@@ -12,17 +13,19 @@ export function Hero() {
     <section className="bg-hero">
       <div className="mx-auto flex max-w-[1440px] flex-col xl:flex-row xl:items-stretch">
         <div className="flex flex-col px-4 pt-10 pb-7 xl:w-[640px] xl:shrink-0 xl:px-0 xl:pt-[103px] xl:pr-8 xl:pb-[116px] xl:pl-[100px]">
-          <h1 className="font-display max-w-[315px] text-[36px] leading-9 text-black xl:max-w-[577px] xl:text-[64px] xl:leading-[64px]">
+          <h1 className="font-display max-w-[315px] text-[36px] leading-9 text-black motion-safe:animate-rise xl:max-w-[577px] xl:text-[64px] xl:leading-[64px]">
             TRANG PHỤC HỢP PHONG CÁCH CỦA BẠN
           </h1>
-          <p className="mt-4 max-w-[545px] text-sm leading-[22px] text-text-60 xl:mt-8 xl:text-base">
+          <p className="mt-4 max-w-[545px] text-sm leading-[22px] text-text-60 motion-safe:animate-rise motion-safe:[animation-delay:120ms] xl:mt-8 xl:text-base">
             Khám phá bộ sưu tập trang phục đa dạng, được chế tác tỉ mỉ để tôn
             lên cá tính và phù hợp với gu thời trang của bạn.
           </p>
-          <Button href="/shop" className="mt-6 w-full xl:mt-8 xl:w-[210px]">
-            Mua ngay
-          </Button>
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-y-3 xl:mt-12 xl:flex-nowrap xl:justify-start xl:gap-8">
+          <div className="flex flex-col motion-safe:animate-rise motion-safe:[animation-delay:240ms]">
+            <Button href="/shop" className="mt-6 w-full xl:mt-8 xl:w-[210px]">
+              Mua ngay
+            </Button>
+          </div>
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-y-3 motion-safe:animate-rise motion-safe:[animation-delay:360ms] xl:mt-12 xl:flex-nowrap xl:justify-start xl:gap-8">
             {stats.map((stat, index) => (
               <div key={stat.label} className="flex items-start">
                 {index > 0 ? (
@@ -38,9 +41,10 @@ export function Hero() {
                       : ""
                   }
                 >
-                  <p className="text-[24px] font-bold leading-none xl:text-[36px]">
-                    {stat.value}
-                  </p>
+                  <CountUp
+                    value={stat.value}
+                    className="text-[24px] font-bold leading-none xl:text-[36px]"
+                  />
                   <p className="mt-1 text-xs leading-[22px] text-text-60 xl:text-base">
                     {stat.label}
                   </p>
@@ -57,26 +61,26 @@ export function Hero() {
             fill
             priority
             sizes="(max-width: 1280px) 100vw, 720px"
-            className="object-cover object-[center_20%]"
+            className="object-cover object-[center_20%] motion-safe:animate-settle"
           />
-          <span className="absolute top-[40px] right-[27px] size-[76px] overflow-clip xl:top-[86px] xl:right-[81px] xl:size-[104px]">
+          <span className="absolute top-[40px] right-[27px] size-[76px] overflow-clip motion-safe:animate-rise motion-safe:[animation-delay:500ms] xl:top-[86px] xl:right-[81px] xl:size-[104px]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/icons/sparkle-lg.svg"
               alt=""
               width={104}
               height={104}
-              className="size-full"
+              className="size-full motion-safe:animate-twinkle"
             />
           </span>
-          <span className="absolute top-[137px] left-[27px] size-11 overflow-clip xl:top-[297px] xl:left-9 xl:size-14">
+          <span className="absolute top-[137px] left-[27px] size-11 overflow-clip motion-safe:animate-rise motion-safe:[animation-delay:650ms] xl:top-[297px] xl:left-9 xl:size-14">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/icons/sparkle-sm.svg"
               alt=""
               width={56}
               height={56}
-              className="size-full"
+              className="size-full motion-safe:animate-twinkle motion-safe:[animation-delay:-3s]"
             />
           </span>
         </div>

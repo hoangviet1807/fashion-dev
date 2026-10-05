@@ -12,6 +12,7 @@ import { ProductCard } from "@/components/product/ProductCard";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Rating } from "@/components/ui/Rating";
 import { Price } from "@/components/ui/Price";
+import { RevealGroup, RevealItem } from "@/components/motion/Reveal";
 
 export function ProductDetailView({
   product,
@@ -103,14 +104,21 @@ export function ProductDetailView({
       {related.length > 0 ? (
         <section className="pt-12 pb-12 xl:pt-16 xl:pb-16">
           <Container>
-            <SectionHeading className="mb-8 xl:mb-14">
-              Có thể bạn cũng thích
-            </SectionHeading>
-            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none xl:grid xl:grid-cols-4 xl:gap-5 xl:overflow-visible xl:pb-0">
-              {related.map((item) => (
-                <ProductCard key={item.id} product={item} />
-              ))}
-            </div>
+            <RevealGroup stagger={0.1}>
+              <RevealItem>
+                <SectionHeading className="mb-8 xl:mb-14">
+                  Có thể bạn cũng thích
+                </SectionHeading>
+              </RevealItem>
+              <RevealGroup
+                nested
+                className="flex gap-4 overflow-x-auto pb-2 scrollbar-none xl:grid xl:grid-cols-4 xl:gap-5 xl:overflow-visible xl:pb-0"
+              >
+                {related.map((item) => (
+                  <ProductCard key={item.id} product={item} />
+                ))}
+              </RevealGroup>
+            </RevealGroup>
           </Container>
         </section>
       ) : null}

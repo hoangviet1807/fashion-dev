@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
+import { chipClasses, swatchClasses } from "@/components/ui/choice";
 import { PriceSlider } from "@/components/shop/PriceSlider";
 import { Chevron } from "@/components/shop/ShopBreadcrumb";
 import {
@@ -15,6 +16,9 @@ import {
   type CategoryId,
   type DressStyleId,
 } from "@/lib/catalog";
+
+const SECTION_TOGGLE =
+  "-mx-2 flex w-[calc(100%+1rem)] items-center justify-between rounded-xl px-2 py-1 transition-colors duration-150 hover:bg-muted";
 
 type Expanded = {
   price: boolean;
@@ -61,12 +65,14 @@ export function FiltersPanel({
           <Link
             key={item.id}
             href={categoryHref(item.id)}
-            className={`flex items-center justify-between py-2 text-base ${
+            className={`group/link flex items-center justify-between py-2 text-base transition-colors duration-150 hover:text-black ${
               category === item.id ? "font-medium text-black" : "text-text-60"
             }`}
           >
             {item.label}
-            <Chevron direction="right" />
+            <span className="transition-transform duration-200 group-hover/link:translate-x-1 motion-reduce:transition-none">
+              <Chevron direction="right" />
+            </span>
           </Link>
         ))}
       </div>
@@ -76,7 +82,7 @@ export function FiltersPanel({
       <section>
         <button
           type="button"
-          className="flex w-full items-center justify-between"
+          className={SECTION_TOGGLE}
           onClick={() => onToggle("price")}
           aria-expanded={expanded.price}
         >
@@ -101,7 +107,7 @@ export function FiltersPanel({
       <section>
         <button
           type="button"
-          className="flex w-full items-center justify-between"
+          className={SECTION_TOGGLE}
           onClick={() => onToggle("colors")}
           aria-expanded={expanded.colors}
         >
@@ -119,7 +125,7 @@ export function FiltersPanel({
                   aria-label={colorLabel(swatch.id)}
                   aria-pressed={selected}
                   onClick={() => onColor(swatch.id)}
-                  className="flex size-9 items-center justify-center rounded-full border border-black/20 xl:size-10"
+                  className={`size-9 xl:size-10 ${swatchClasses(selected)}`}
                   style={{ backgroundColor: swatch.hex }}
                 >
                   {selected ? (
@@ -141,7 +147,7 @@ export function FiltersPanel({
       <section>
         <button
           type="button"
-          className="flex w-full items-center justify-between"
+          className={SECTION_TOGGLE}
           onClick={() => onToggle("size")}
           aria-expanded={expanded.size}
         >
@@ -158,11 +164,7 @@ export function FiltersPanel({
                   type="button"
                   aria-pressed={selected}
                   onClick={() => onSize(item)}
-                  className={`inline-flex h-[39px] items-center justify-center rounded-[62px] px-5 text-sm ${
-                    selected
-                      ? "bg-black font-medium text-white"
-                      : "bg-muted text-text-60"
-                  }`}
+                  className={`h-[39px] px-5 text-sm ${chipClasses(selected)}`}
                 >
                   {item}
                 </button>
@@ -177,7 +179,7 @@ export function FiltersPanel({
       <section>
         <button
           type="button"
-          className="flex w-full items-center justify-between"
+          className={SECTION_TOGGLE}
           onClick={() => onToggle("style")}
           aria-expanded={expanded.style}
         >
@@ -190,12 +192,14 @@ export function FiltersPanel({
               <Link
                 key={item.id}
                 href={styleHref(item.id)}
-                className={`flex items-center justify-between py-2 text-base ${
+                className={`group/link flex items-center justify-between py-2 text-base transition-colors duration-150 hover:text-black ${
                   style === item.id ? "font-medium text-black" : "text-text-60"
                 }`}
               >
                 {item.label}
-                <Chevron direction="right" />
+                <span className="transition-transform duration-200 group-hover/link:translate-x-1 motion-reduce:transition-none">
+                  <Chevron direction="right" />
+                </span>
               </Link>
             ))}
           </div>
