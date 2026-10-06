@@ -4,6 +4,7 @@ import type { ProductSummary } from "@/lib/types/product";
 import { Rating } from "@/components/ui/Rating";
 import { Price } from "@/components/ui/Price";
 import { RevealItem } from "@/components/motion/Reveal";
+import { WishlistButton } from "@/components/wishlist/WishlistButton";
 
 export function ProductCard({
   product,
@@ -20,7 +21,8 @@ export function ProductCard({
       : "h-[200px] xl:h-[298px]";
 
   return (
-    <RevealItem className={`flex ${width}`}>
+    <RevealItem className={`relative flex ${width}`}>
+      <WishlistButton slug={product.slug} name={product.name} variant="card" />
       <Link href={`/product/${product.slug}`} className="group flex w-full min-w-0 flex-col">
         <div className={`relative overflow-hidden rounded-[20px] bg-product ${imageBox}`}>
           <Image

@@ -14,8 +14,11 @@ import { resolveAddress } from "@/lib/address/wards";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { getDb } from "@/lib/db";
 import { addresses, users } from "@/lib/db/schema";
+import { peekRateLimit, rateLimit, retryMinutes } from "@/lib/rate-limit";
 
 const MAX_ADDRESSES = 10;
+/** Wrong current passwords per account before the form locks for the window. */
+const PASSWORD_FAILURE_LIMIT = { limit: 5, windowSeconds: 15 * 60 };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export type AccountResult =
@@ -74,7 +77,16 @@ export async function changePassword(input: AccountInput): Promise<AccountResult
   if (!user?.passwordHash) {
     return { status: "error", message: "Tài khoản này đăng nhập bằng Google / Facebook, chưa có mật khẩu." };
   }
+  const failuresKey = `change-password:user:${userId}`;
+  const failures = await peekRateLimit(failuresKey, PASSWORD_FAILURE_LIMIT);
+  if (!failures.ok) {
+    return {
+      status: "error",
+      message: `Bạn nhập sai mật khẩu quá nhiều lần. Vui lòng thử lại sau ${retryMinutes(failures)} phút.`,
+    };
+  }
   if (!(await verifyPassword(parsed.data.currentPassword, user.passwordHash))) {
+    await rateLimit(failuresKey, PASSWORD_FAILURE_LIMIT);
     return { status: "invalid", fieldErrors: { currentPassword: "Mật khẩu hiện tại không đúng." } };
   }
 

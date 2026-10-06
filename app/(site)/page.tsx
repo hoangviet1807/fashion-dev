@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Hero } from "@/components/home/Hero";
 import { BrandBar } from "@/components/home/BrandBar";
 import { ProductSection } from "@/components/home/ProductSection";
@@ -5,6 +6,12 @@ import { DressStyleGrid } from "@/components/home/DressStyleGrid";
 import { Testimonials } from "@/components/home/Testimonials";
 import { getBrands, getTestimonials } from "@/lib/data/content";
 import { getCollection } from "@/lib/data/products";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { organizationJsonLd } from "@/lib/seo";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export default async function Home() {
   const [brands, newArrivals, topSelling, testimonials] = await Promise.all([
@@ -16,6 +23,7 @@ export default async function Home() {
 
   return (
     <>
+      <JsonLd data={organizationJsonLd()} />
       <Hero />
       <BrandBar brands={brands} />
       <ProductSection

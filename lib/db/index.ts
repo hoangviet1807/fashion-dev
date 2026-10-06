@@ -13,7 +13,9 @@ export function getDb(): Database {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL is not set.");
 
-  const db = drizzle({ client: postgres(url, { max: 10 }), schema });
+  // Serverless instances each hold their own pool; PgBouncer (transaction mode) rejects prepared statements.
+  const client = postgres(url, { max: process.env.VERCEL ? 1 : 10, prepare: false });
+  const db = drizzle({ client, schema });
   globalForDb.db = db;
   return db;
 }

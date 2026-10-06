@@ -4,11 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/app/(site)/(auth)/actions";
 import { useCartStore } from "@/lib/cart/store";
+import { useWishlistStore } from "@/lib/wishlist/store";
 
 const LINKS = [
   { href: "/account", label: "Thông tin cá nhân" },
   { href: "/account/orders", label: "Đơn hàng" },
   { href: "/account/addresses", label: "Sổ địa chỉ" },
+  { href: "/wishlist", label: "Yêu thích" },
 ];
 
 const PILL =
@@ -20,6 +22,7 @@ export function AccountNav({ showAdmin = false }: { showAdmin?: boolean }) {
   async function signOut() {
     // The account cart stays in the database; drop the local copy before leaving.
     useCartStore.getState().detach();
+    useWishlistStore.getState().detach();
     await logout();
   }
 

@@ -54,6 +54,7 @@ export const PRODUCT_BY_SLUG_QUERY = defineQuery(`
     ${PRODUCT_CARD},
     description,
     "categoryTitle": category->title,
+    "brand": brand->name,
     "images": images[].asset->url,
     reviewCount,
     "variants": variants[] { sku, color, size, stock },
@@ -74,6 +75,10 @@ export const RELATED_PRODUCTS_QUERY = defineQuery(`
         | order(popularity desc) [0...4] { ${PRODUCT_CARD} }
     )
   }.items
+`);
+
+export const PRODUCTS_BY_SLUGS_QUERY = defineQuery(`
+  *[_type == "product" && slug.current in $slugs] { ${PRODUCT_CARD} }
 `);
 
 export const CHECKOUT_VARIANTS_QUERY = defineQuery(`
@@ -150,3 +155,14 @@ export const PAGE_BY_SLUG_QUERY = defineQuery(`
 export const PAGE_SLUGS_QUERY = defineQuery(`
   *[_type == "page" && defined(slug.current)].slug.current
 `);
+
+export const SITEMAP_QUERY = defineQuery(`{
+  "products": *[_type == "product" && defined(slug.current)] | order(_createdAt desc) {
+    "slug": slug.current,
+    _updatedAt
+  },
+  "pages": *[_type == "page" && defined(slug.current)] | order(slug.current asc) {
+    "slug": slug.current,
+    _updatedAt
+  }
+}`);

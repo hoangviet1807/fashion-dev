@@ -441,7 +441,7 @@ export type SHOP_PRODUCTS_QUERY_RESULT = {
 
 // Source: sanity/lib/queries.ts
 // Variable: PRODUCT_BY_SLUG_QUERY
-// Query: *[_type == "product" && slug.current == $slug][0] {      _id,  "slug": slug.current,  name,  "image": images[0].asset->url,  price,  compareAtPrice,  discount,  rating,  "category": category->slug.current,  "styles": dressStyles[]->slug.current,  "colors": array::unique(variants[].color),  "sizes": array::unique(variants[].size),    description,    "categoryTitle": category->title,    "images": images[].asset->url,    reviewCount,    "variants": variants[] { sku, color, size, stock },    details { material, fit, featuresIntro, features },    "faqs": coalesce(faqs, *[_id == "siteSettings"][0].productFaqs)[] {      "id": _key,      question,      answer    }  }
+// Query: *[_type == "product" && slug.current == $slug][0] {      _id,  "slug": slug.current,  name,  "image": images[0].asset->url,  price,  compareAtPrice,  discount,  rating,  "category": category->slug.current,  "styles": dressStyles[]->slug.current,  "colors": array::unique(variants[].color),  "sizes": array::unique(variants[].size),    description,    "categoryTitle": category->title,    "brand": brand->name,    "images": images[].asset->url,    reviewCount,    "variants": variants[] { sku, color, size, stock },    details { material, fit, featuresIntro, features },    "faqs": coalesce(faqs, *[_id == "siteSettings"][0].productFaqs)[] {      "id": _key,      question,      answer    }  }
 export type PRODUCT_BY_SLUG_QUERY_RESULT = {
   _id: string;
   slug: string;
@@ -481,6 +481,7 @@ export type PRODUCT_BY_SLUG_QUERY_RESULT = {
   >;
   description: string | null;
   categoryTitle: string;
+  brand: string | null;
   images: Array<string | null>;
   reviewCount: number | null;
   variants: Array<{
@@ -565,6 +566,48 @@ export type RELATED_PRODUCTS_QUERY_RESULT = Array<{
     | "XX-Small"
   >;
 }> | null;
+
+// Source: sanity/lib/queries.ts
+// Variable: PRODUCTS_BY_SLUGS_QUERY
+// Query: *[_type == "product" && slug.current in $slugs] {   _id,  "slug": slug.current,  name,  "image": images[0].asset->url,  price,  compareAtPrice,  discount,  rating,  "category": category->slug.current,  "styles": dressStyles[]->slug.current,  "colors": array::unique(variants[].color),  "sizes": array::unique(variants[].size) }
+export type PRODUCTS_BY_SLUGS_QUERY_RESULT = Array<{
+  _id: string;
+  slug: string;
+  name: string;
+  image: string | null;
+  price: number;
+  compareAtPrice: number | null;
+  discount: number | null;
+  rating: number | null;
+  category: string;
+  styles: Array<string> | null;
+  colors: Array<
+    | "black"
+    | "blue"
+    | "cyan"
+    | "forest"
+    | "green"
+    | "navy"
+    | "olive"
+    | "orange"
+    | "pink"
+    | "purple"
+    | "red"
+    | "white"
+    | "yellow"
+  >;
+  sizes: Array<
+    | "3X-Large"
+    | "4X-Large"
+    | "Large"
+    | "Medium"
+    | "Small"
+    | "X-Large"
+    | "X-Small"
+    | "XX-Large"
+    | "XX-Small"
+  >;
+}>;
 
 // Source: sanity/lib/queries.ts
 // Variable: CHECKOUT_VARIANTS_QUERY
@@ -844,13 +887,28 @@ export type PAGE_BY_SLUG_QUERY_RESULT = {
 // Query: *[_type == "page" && defined(slug.current)].slug.current
 export type PAGE_SLUGS_QUERY_RESULT = Array<string>;
 
+// Source: sanity/lib/queries.ts
+// Variable: SITEMAP_QUERY
+// Query: {  "products": *[_type == "product" && defined(slug.current)] | order(_createdAt desc) {    "slug": slug.current,    _updatedAt  },  "pages": *[_type == "page" && defined(slug.current)] | order(slug.current asc) {    "slug": slug.current,    _updatedAt  }}
+export type SITEMAP_QUERY_RESULT = {
+  products: Array<{
+    slug: string;
+    _updatedAt: string;
+  }>;
+  pages: Array<{
+    slug: string;
+    _updatedAt: string;
+  }>;
+};
+
 // Query TypeMap
 import "@sanity/client";
 declare module "@sanity/client" {
   interface SanityQueries {
     '{\n  "items": *[\n  _type == "product" && defined(slug.current)\n  && (count($terms) == 0 || (\n  [name, category->title, category->slug.current, brand->name]\n  + coalesce(dressStyles[]->title, [])\n  + coalesce(dressStyles[]->slug.current, [])\n  + coalesce(variants[].color, [])\n  + coalesce(tags, [])\n) match $terms || (\n  [name, category->title, category->slug.current, brand->name]\n  + coalesce(dressStyles[]->title, [])\n  + coalesce(dressStyles[]->slug.current, [])\n  + coalesce(variants[].color, [])\n  + coalesce(tags, [])\n) match $altTerms)\n  && (!$sale || compareAtPrice > price || discount > 0)\n  && (!defined($brand) || brand->slug.current == $brand)\n  && (!defined($category) || category->slug.current == $category)\n  && (!defined($style) || $style in dressStyles[]->slug.current)\n  && (!defined($color) || $color in variants[].color)\n  && (!defined($size) || $size in variants[].size)\n  && (!defined($minPrice) || price >= $minPrice)\n  && (!defined($maxPrice) || price <= $maxPrice)\n]\n    | score(boost(name match $terms, 3), boost(name match $altTerms, 3))\n    | order(\n        select($sort == "newest" => _createdAt) desc,\n        select($sort == "low-price" => price, $sort == "high-price" => -price, -_score) asc,\n        popularity desc\n      )\n    [$start...$end] { \n  _id,\n  "slug": slug.current,\n  name,\n  "image": images[0].asset->url,\n  price,\n  compareAtPrice,\n  discount,\n  rating,\n  "category": category->slug.current,\n  "styles": dressStyles[]->slug.current,\n  "colors": array::unique(variants[].color),\n  "sizes": array::unique(variants[].size)\n },\n  "total": count(*[\n  _type == "product" && defined(slug.current)\n  && (count($terms) == 0 || (\n  [name, category->title, category->slug.current, brand->name]\n  + coalesce(dressStyles[]->title, [])\n  + coalesce(dressStyles[]->slug.current, [])\n  + coalesce(variants[].color, [])\n  + coalesce(tags, [])\n) match $terms || (\n  [name, category->title, category->slug.current, brand->name]\n  + coalesce(dressStyles[]->title, [])\n  + coalesce(dressStyles[]->slug.current, [])\n  + coalesce(variants[].color, [])\n  + coalesce(tags, [])\n) match $altTerms)\n  && (!$sale || compareAtPrice > price || discount > 0)\n  && (!defined($brand) || brand->slug.current == $brand)\n  && (!defined($category) || category->slug.current == $category)\n  && (!defined($style) || $style in dressStyles[]->slug.current)\n  && (!defined($color) || $color in variants[].color)\n  && (!defined($size) || $size in variants[].size)\n  && (!defined($minPrice) || price >= $minPrice)\n  && (!defined($maxPrice) || price <= $maxPrice)\n])\n}': SHOP_PRODUCTS_QUERY_RESULT;
-    '\n  *[_type == "product" && slug.current == $slug][0] {\n    \n  _id,\n  "slug": slug.current,\n  name,\n  "image": images[0].asset->url,\n  price,\n  compareAtPrice,\n  discount,\n  rating,\n  "category": category->slug.current,\n  "styles": dressStyles[]->slug.current,\n  "colors": array::unique(variants[].color),\n  "sizes": array::unique(variants[].size)\n,\n    description,\n    "categoryTitle": category->title,\n    "images": images[].asset->url,\n    reviewCount,\n    "variants": variants[] { sku, color, size, stock },\n    details { material, fit, featuresIntro, features },\n    "faqs": coalesce(faqs, *[_id == "siteSettings"][0].productFaqs)[] {\n      "id": _key,\n      question,\n      answer\n    }\n  }\n': PRODUCT_BY_SLUG_QUERY_RESULT;
+    '\n  *[_type == "product" && slug.current == $slug][0] {\n    \n  _id,\n  "slug": slug.current,\n  name,\n  "image": images[0].asset->url,\n  price,\n  compareAtPrice,\n  discount,\n  rating,\n  "category": category->slug.current,\n  "styles": dressStyles[]->slug.current,\n  "colors": array::unique(variants[].color),\n  "sizes": array::unique(variants[].size)\n,\n    description,\n    "categoryTitle": category->title,\n    "brand": brand->name,\n    "images": images[].asset->url,\n    reviewCount,\n    "variants": variants[] { sku, color, size, stock },\n    details { material, fit, featuresIntro, features },\n    "faqs": coalesce(faqs, *[_id == "siteSettings"][0].productFaqs)[] {\n      "id": _key,\n      question,\n      answer\n    }\n  }\n': PRODUCT_BY_SLUG_QUERY_RESULT;
     '\n  *[_type == "product" && slug.current == $slug][0] {\n    "items": select(\n      count(relatedProducts) > 0 => relatedProducts[]-> { \n  _id,\n  "slug": slug.current,\n  name,\n  "image": images[0].asset->url,\n  price,\n  compareAtPrice,\n  discount,\n  rating,\n  "category": category->slug.current,\n  "styles": dressStyles[]->slug.current,\n  "colors": array::unique(variants[].color),\n  "sizes": array::unique(variants[].size)\n },\n      *[_type == "product" && defined(slug.current) && slug.current != $slug]\n        | order(popularity desc) [0...4] { \n  _id,\n  "slug": slug.current,\n  name,\n  "image": images[0].asset->url,\n  price,\n  compareAtPrice,\n  discount,\n  rating,\n  "category": category->slug.current,\n  "styles": dressStyles[]->slug.current,\n  "colors": array::unique(variants[].color),\n  "sizes": array::unique(variants[].size)\n }\n    )\n  }.items\n': RELATED_PRODUCTS_QUERY_RESULT;
+    '\n  *[_type == "product" && slug.current in $slugs] { \n  _id,\n  "slug": slug.current,\n  name,\n  "image": images[0].asset->url,\n  price,\n  compareAtPrice,\n  discount,\n  rating,\n  "category": category->slug.current,\n  "styles": dressStyles[]->slug.current,\n  "colors": array::unique(variants[].color),\n  "sizes": array::unique(variants[].size)\n }\n': PRODUCTS_BY_SLUGS_QUERY_RESULT;
     '\n  *[_type == "product" && defined(slug.current) && count(variants[sku in $skus]) > 0] {\n    "slug": slug.current,\n    name,\n    "image": images[0].asset->url,\n    price,\n    "variants": variants[sku in $skus] { sku, color, size, stock }\n  }\n': CHECKOUT_VARIANTS_QUERY_RESULT;
     '\n  *[_type == "product" && count(variants[sku in $skus]) > 0] {\n    _id,\n    name,\n    "variants": variants[sku in $skus] { _key, sku, color, size, stock }\n  }\n': INVENTORY_DOCS_QUERY_RESULT;
     '\n  *[_type == "product" && defined(slug.current) && count(variants[stock <= $threshold]) > 0]\n    | order(name asc) {\n    _id,\n    name,\n    "slug": slug.current,\n    "image": images[0].asset->url,\n    "variants": variants[stock <= $threshold] | order(stock asc) { sku, color, size, stock }\n  }\n': LOW_STOCK_QUERY_RESULT;
@@ -863,5 +921,6 @@ declare module "@sanity/client" {
     '\n  *[_type == "brand" && slug.current == $slug][0].name\n': BRAND_NAME_QUERY_RESULT;
     '\n  *[_type == "page" && slug.current == $slug][0] { title, description, body }\n': PAGE_BY_SLUG_QUERY_RESULT;
     '\n  *[_type == "page" && defined(slug.current)].slug.current\n': PAGE_SLUGS_QUERY_RESULT;
+    '{\n  "products": *[_type == "product" && defined(slug.current)] | order(_createdAt desc) {\n    "slug": slug.current,\n    _updatedAt\n  },\n  "pages": *[_type == "page" && defined(slug.current)] | order(slug.current asc) {\n    "slug": slug.current,\n    _updatedAt\n  }\n}': SITEMAP_QUERY_RESULT;
   }
 }

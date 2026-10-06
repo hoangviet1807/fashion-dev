@@ -3,11 +3,20 @@ import { ShopListing } from "@/components/shop/ShopListing";
 import { getBrandName } from "@/lib/data/content";
 import { getProducts } from "@/lib/data/products";
 import { parseShopParams } from "@/lib/shop-params";
+import { BASE_OPEN_GRAPH, NO_INDEX } from "@/lib/seo";
 
-export const metadata: Metadata = {
+const description = "Khám phá trang phục thường ngày, công sở, dự tiệc và thể thao tại SHOP.CO.";
+
+const metadata: Metadata = {
   title: "Cửa hàng | SHOP.CO",
-  description: "Khám phá trang phục thường ngày, công sở, dự tiệc và thể thao tại SHOP.CO.",
+  description,
+  openGraph: { ...BASE_OPEN_GRAPH, type: "website", url: "/shop", title: "Cửa hàng", description },
 };
+
+export async function generateMetadata({ searchParams }: PageProps<"/shop">): Promise<Metadata> {
+  const { q } = parseShopParams(await searchParams);
+  return q ? { ...metadata, robots: NO_INDEX } : metadata;
+}
 
 const PAGE_SIZE = 9;
 

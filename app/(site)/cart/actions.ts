@@ -13,6 +13,11 @@ import { checkoutItemsSchema, checkoutLineSchema } from "@/lib/checkout/schema";
 import { quoteCart } from "@/lib/checkout/quote";
 import { COUPON_CODE_MAX, toAppliedCoupon, type AppliedCoupon } from "@/lib/coupons/discount";
 import { checkCoupon } from "@/lib/coupons/server";
+import { rateLimit, retryMinutes } from "@/lib/rate-limit";
+import { clientIp } from "@/lib/request";
+
+/** Slows down guessing codes; a shopper rarely tries more than a few. */
+const PROMO_IP_LIMIT = { limit: 10, windowSeconds: 10 * 60 };
 
 const promoSchema = z.object({
   code: z.string().trim().min(1, "Vui lòng nhập mã giảm giá.").max(COUPON_CODE_MAX, "Mã giảm giá không tồn tại."),
@@ -31,6 +36,14 @@ export async function applyPromo(input: z.input<typeof promoSchema>): Promise<Pr
   }
 
   try {
+    const limit = await rateLimit(`promo:ip:${await clientIp()}`, PROMO_IP_LIMIT);
+    if (!limit.ok) {
+      return {
+        status: "invalid",
+        message: `Bạn nhập mã quá nhiều lần. Vui lòng thử lại sau ${retryMinutes(limit)} phút.`,
+      };
+    }
+
     const quote = await quoteCart(parsed.data.items);
     if (quote.lines.length === 0) {
       return { status: "invalid", message: "Giỏ hàng của bạn đang trống." };

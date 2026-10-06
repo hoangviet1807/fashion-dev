@@ -2,7 +2,7 @@
 
 import { forgotPasswordSchema } from "@/lib/auth/schema";
 import { requestSubscription } from "@/lib/newsletter/server";
-import { rateLimit } from "@/lib/rate-limit";
+import { rateLimit, retryMinutes } from "@/lib/rate-limit";
 import { clientIp } from "@/lib/request";
 
 /** Bots tend to submit the instant the page loads; people need longer to type an email. */
@@ -43,10 +43,9 @@ export async function subscribeNewsletter(input: NewsletterInput): Promise<Newsl
   try {
     const byIp = await rateLimit(`newsletter:ip:${await clientIp()}`, IP_LIMIT);
     if (!byIp.ok) {
-      const minutes = Math.max(1, Math.ceil(byIp.retryAfterSeconds / 60));
       return {
         status: "error",
-        message: `Bạn thử quá nhiều lần. Thử lại sau ${minutes} phút.`,
+        message: `Bạn thử quá nhiều lần. Thử lại sau ${retryMinutes(byIp)} phút.`,
       };
     }
     if (!(await rateLimit(`newsletter:email:${email}`, EMAIL_LIMIT)).ok) return { status: "sent" };

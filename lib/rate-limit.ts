@@ -1,9 +1,19 @@
 import { createHash } from "node:crypto";
-import { lt, sql } from "drizzle-orm";
+import { and, eq, gt, lt, sql } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { rateLimits } from "@/lib/db/schema";
 
 export type RateLimitResult = { ok: boolean; retryAfterSeconds: number };
+export type RateLimitOptions = { limit: number; windowSeconds: number };
+
+const hashKey = (key: string) => createHash("sha256").update(key).digest("hex");
+
+const retryAfter = (resetAt: Date) =>
+  Math.max(0, Math.ceil((resetAt.getTime() - Date.now()) / 1000));
+
+/** Minutes to show in "try again in N minutes" messages; never 0. */
+export const retryMinutes = ({ retryAfterSeconds }: RateLimitResult) =>
+  Math.max(1, Math.ceil(retryAfterSeconds / 60));
 
 /**
  * Fixed-window counter shared by every server instance. Keys are hashed so IPs
@@ -11,10 +21,10 @@ export type RateLimitResult = { ok: boolean; retryAfterSeconds: number };
  */
 export async function rateLimit(
   key: string,
-  { limit, windowSeconds }: { limit: number; windowSeconds: number },
+  { limit, windowSeconds }: RateLimitOptions,
 ): Promise<RateLimitResult> {
   const db = getDb();
-  const hashed = createHash("sha256").update(key).digest("hex");
+  const hashed = hashKey(key);
   const window = sql`now() + make_interval(secs => ${windowSeconds})`;
 
   const [row] = await db
@@ -33,8 +43,22 @@ export async function rateLimit(
     await db.delete(rateLimits).where(lt(rateLimits.resetAt, sql`now()`));
   }
 
-  return {
-    ok: row.count <= limit,
-    retryAfterSeconds: Math.max(0, Math.ceil((row.resetAt.getTime() - Date.now()) / 1000)),
-  };
+  return { ok: row.count <= limit, retryAfterSeconds: retryAfter(row.resetAt) };
+}
+
+/**
+ * Reads a counter without adding to it, for limits that only count some
+ * outcomes (e.g. failed logins). `ok` is false once `limit` hits are recorded.
+ */
+export async function peekRateLimit(
+  key: string,
+  { limit }: Pick<RateLimitOptions, "limit">,
+): Promise<RateLimitResult> {
+  const [row] = await getDb()
+    .select({ count: rateLimits.count, resetAt: rateLimits.resetAt })
+    .from(rateLimits)
+    .where(and(eq(rateLimits.key, hashKey(key)), gt(rateLimits.resetAt, sql`now()`)))
+    .limit(1);
+  if (!row) return { ok: true, retryAfterSeconds: 0 };
+  return { ok: row.count < limit, retryAfterSeconds: retryAfter(row.resetAt) };
 }

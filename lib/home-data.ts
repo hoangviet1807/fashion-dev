@@ -65,6 +65,7 @@ export const footerColumns: { title: string; links: FooterLink[] }[] = [
       { label: "Tài khoản", href: "/account" },
       { label: "Đơn hàng", href: "/account/orders" },
       { label: "Sổ địa chỉ", href: "/account/addresses" },
+      { label: "Yêu thích", href: "/wishlist" },
       { label: "Giỏ hàng", href: "/cart" },
     ],
   },

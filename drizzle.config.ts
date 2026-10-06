@@ -9,6 +9,7 @@ export default defineConfig({
   dialect: "postgresql",
   schema: "./lib/db/schema.ts",
   out: "./drizzle",
-  dbCredentials: { url: process.env.DATABASE_URL! },
+  // Migrations need a direct (non-pooled) connection when one is available.
+  dbCredentials: { url: (process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL)! },
   strict: true,
 });

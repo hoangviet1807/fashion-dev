@@ -337,6 +337,19 @@ export const cartItems = pgTable(
   (table) => [primaryKey({ columns: [table.userId, table.sku] })],
 );
 
+/** Signed-in shoppers' saved products, keyed by slug like `order_items`. */
+export const wishlistItems = pgTable(
+  "wishlist_items",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    productSlug: text("product_slug").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.productSlug] })],
+);
+
 /**
  * Product reviews, keyed by product slug (as stored on `order_items`). Only
  * shoppers with a confirmed order for the product may write one; one per user.

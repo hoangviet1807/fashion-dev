@@ -6,6 +6,7 @@ import { CheckoutView, type CheckoutDefaults } from "@/components/checkout/Check
 export const metadata: Metadata = {
   title: "Thanh toán | SHOP.CO",
   description: "Nhập thông tin liên hệ, địa chỉ giao hàng và thanh toán để hoàn tất đơn hàng tại SHOP.CO.",
+  robots: { index: false, follow: false },
 };
 
 async function accountDefaults(): Promise<CheckoutDefaults> {

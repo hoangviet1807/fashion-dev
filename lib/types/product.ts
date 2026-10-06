@@ -44,6 +44,8 @@ export type Product = {
   /** Category slug. */
   category: string;
   categoryTitle: string;
+  /** Brand display name. */
+  brand?: string;
   /** Dress style slugs. */
   styles: string[];
   variants: ProductVariant[];

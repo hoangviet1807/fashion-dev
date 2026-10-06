@@ -6,6 +6,7 @@ import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 export const metadata: Metadata = {
   title: "Quên mật khẩu | SHOP.CO",
   description: "Nhận liên kết đặt lại mật khẩu tài khoản SHOP.CO qua email.",
+  robots: { index: false },
 };
 
 export default function ForgotPasswordPage() {

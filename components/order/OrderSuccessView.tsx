@@ -6,13 +6,31 @@ import { ShopBreadcrumb } from "@/components/shop/ShopBreadcrumb";
 import { Button } from "@/components/ui/Button";
 import { ClearCart } from "./ClearCart";
 import { OrderDetails } from "./OrderDetails";
+import { TrackPurchase } from "./TrackPurchase";
 
 export function OrderSuccessView({ order, items }: { order: Order; items: OrderItem[] }) {
   const confirmed = CONFIRMED_ORDER_STATUSES.includes(order.status);
 
   return (
     <div>
-      {confirmed ? <ClearCart /> : null}
+      {confirmed ? (
+        <>
+          <ClearCart />
+          <TrackPurchase
+            orderNumber={order.number}
+            total={order.total}
+            currency={order.currency}
+            coupon={order.couponCode}
+            items={items.map((item) => ({
+              sku: item.sku,
+              name: item.name,
+              variant: `${item.color} / ${item.size}`,
+              price: item.unitPrice,
+              quantity: item.quantity,
+            }))}
+          />
+        </>
+      ) : null}
       <Container className="pb-20 xl:pb-[80px]">
         <hr className="border-line" />
         <div className="pt-5 xl:pt-6">

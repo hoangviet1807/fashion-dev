@@ -64,6 +64,13 @@
       "when": 1791222717730,
       "tag": "0008_add_admin",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791303581436,
+      "tag": "0009_add_wishlist",
+      "breakpoints": true
     }
   ]
 }

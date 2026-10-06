@@ -9,6 +9,7 @@ import {
   cartTotal,
   type ShippingMethodId,
 } from "@/lib/cart-data";
+import { toAnalyticsItem, trackEcommerce } from "@/lib/analytics";
 import { useCartHydrated, useCartStore, type CartLine } from "@/lib/cart/store";
 import { couponDiscount, toAppliedCoupon } from "@/lib/coupons/discount";
 import { colorLabel } from "@/lib/catalog";
@@ -87,6 +88,11 @@ export function CheckoutView({
     refreshed.current = true;
     const seenPrices = Object.fromEntries(items.map((item) => [item.sku, item.price]));
     const couponCode = coupon?.code;
+    trackEcommerce("begin_checkout", {
+      value: subtotal - discount,
+      coupon: couponCode,
+      items: items.map(toAnalyticsItem),
+    });
     refreshCart({ items: toLineInput(items), seenPrices, couponCode })
       .then((quote) => {
         if (!quote) return;
@@ -97,7 +103,7 @@ export function CheckoutView({
         }
       })
       .catch(() => {});
-  }, [hydrated, items, coupon, replace, setCoupon]);
+  }, [hydrated, items, coupon, subtotal, discount, replace, setCoupon]);
 
   useEffect(() => {
     if (notices.length === 0) return;

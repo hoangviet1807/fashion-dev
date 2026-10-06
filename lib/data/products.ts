@@ -1,8 +1,10 @@
+import { client } from "@/sanity/lib/client";
 import { sanityFetch } from "@/sanity/lib/live";
 import {
   HOME_COLLECTIONS_QUERY,
   PRODUCT_BY_SLUG_QUERY,
   PRODUCT_SLUGS_QUERY,
+  PRODUCTS_BY_SLUGS_QUERY,
   RELATED_PRODUCTS_QUERY,
   SHOP_PRODUCTS_QUERY,
 } from "@/sanity/lib/queries";
@@ -94,6 +96,7 @@ export async function getProductBySlug(
     rating: reviews ? reviews.summary.average : summary.rating,
     description: data.description ?? "",
     categoryTitle: data.categoryTitle ?? data.category,
+    brand: data.brand ?? undefined,
     images: images.length > 0 ? images : [summary.image],
     reviewCount: reviews ? reviews.summary.count : (data.reviewCount ?? 0),
     variants: data.variants,
@@ -136,6 +139,14 @@ export async function getRelated(product: Product): Promise<ProductSummary[]> {
     stega: false,
   });
   return toSummaries(data);
+}
+
+/** Summaries in the order of `slugs`; unknown slugs are skipped. */
+export async function getProductsBySlugs(slugs: string[]): Promise<ProductSummary[]> {
+  if (slugs.length === 0) return [];
+  const cards = await client.fetch(PRODUCTS_BY_SLUGS_QUERY, { slugs });
+  const bySlug = new Map(toSummaries(cards).map((item) => [item.slug, item]));
+  return slugs.flatMap((slug) => bySlug.get(slug) ?? []);
 }
 
 export type CollectionId = "newArrivals" | "topSelling";

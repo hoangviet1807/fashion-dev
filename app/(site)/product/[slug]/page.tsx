@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductDetailView } from "@/components/product/ProductDetailView";
+import { JsonLd } from "@/components/seo/JsonLd";
 import {
   getAllProductSlugs,
   getProductBySlug,
   getRelated,
 } from "@/lib/data/products";
+import { breadcrumbJsonLd, productJsonLd, productMetadata } from "@/lib/seo";
 
 export async function generateStaticParams() {
   const slugs = await getAllProductSlugs();
@@ -20,10 +22,7 @@ export async function generateMetadata({
   if (!product) {
     return { title: "Sản phẩm | SHOP.CO" };
   }
-  return {
-    title: `${product.name} | SHOP.CO`,
-    description: product.description,
-  };
+  return productMetadata(product);
 }
 
 export default async function ProductPage({
@@ -36,6 +35,17 @@ export default async function ProductPage({
   }
 
   return (
-    <ProductDetailView product={product} related={await getRelated(product)} />
+    <>
+      <JsonLd data={productJsonLd(product)} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Trang chủ", path: "/" },
+          { name: "Cửa hàng", path: "/shop" },
+          { name: product.categoryTitle, path: `/shop?category=${product.category}` },
+          { name: product.name },
+        ])}
+      />
+      <ProductDetailView product={product} related={await getRelated(product)} />
+    </>
   );
 }

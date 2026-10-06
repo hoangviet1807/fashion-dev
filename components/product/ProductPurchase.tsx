@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { STEPPER_BUTTON, chipClasses, swatchClasses } from "@/components/ui/choice";
+import { WishlistButton } from "@/components/wishlist/WishlistButton";
+import { toAnalyticsItem, trackEcommerce } from "@/lib/analytics";
 import { useCartQuantity, useCartStore } from "@/lib/cart/store";
 import { colorLabel, colorSwatch } from "@/lib/catalog";
 import { productColors, productSizes } from "@/lib/product";
@@ -41,7 +43,15 @@ export function ProductPurchase({ product }: { product: Product }) {
       },
       qty,
     );
-    if (added > 0) setQty(1);
+    if (added > 0) {
+      setQty(1);
+      trackEcommerce("add_to_cart", {
+        value: product.price * added,
+        items: [
+          toAnalyticsItem({ ...variant, name: product.name, price: product.price, quantity: added }),
+        ],
+      });
+    }
   }
 
   return (
@@ -127,6 +137,7 @@ export function ProductPurchase({ product }: { product: Product }) {
         >
           Thêm vào giỏ
         </Button>
+        <WishlistButton slug={product.slug} name={product.name} variant="detail" />
       </div>
     </div>
   );

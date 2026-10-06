@@ -1,6 +1,6 @@
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { eq, sql } from "drizzle-orm";
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Facebook from "next-auth/providers/facebook";
 import Google from "next-auth/providers/google";
@@ -10,6 +10,19 @@ import { verifyPassword } from "@/lib/auth/password";
 import { loginSchema } from "@/lib/auth/schema";
 import { getDb } from "@/lib/db";
 import { accounts, users } from "@/lib/db/schema";
+import { peekRateLimit, rateLimit } from "@/lib/rate-limit";
+import { ipFromHeaders } from "@/lib/request";
+
+/** Every attempt from one IP, whichever accounts it targets. */
+const LOGIN_IP_LIMIT = { limit: 20, windowSeconds: 15 * 60 };
+/** Failed attempts on one account, whatever the source IP. */
+const LOGIN_EMAIL_LIMIT = { limit: 8, windowSeconds: 15 * 60 };
+
+export const LOGIN_RATE_LIMITED = "rate_limited";
+
+export class LoginRateLimited extends CredentialsSignin {
+  code = LOGIN_RATE_LIMITED;
+}
 
 const OAUTH_PROVIDERS = [
   { id: "google", label: "Google", env: "GOOGLE" },
@@ -28,14 +41,23 @@ export function enabledOAuthProviders() {
 const providers: Provider[] = [
   Credentials({
     credentials: { email: {}, password: {} },
-    async authorize(raw) {
+    async authorize(raw, request) {
       const parsed = loginSchema.safeParse(raw);
       if (!parsed.success) return null;
       const { email, password } = parsed.data;
 
+      const emailKey = `login:email:${email}`;
+      const byIp = await rateLimit(`login:ip:${ipFromHeaders(request.headers)}`, LOGIN_IP_LIMIT);
+      if (!byIp.ok || !(await peekRateLimit(emailKey, LOGIN_EMAIL_LIMIT)).ok) {
+        throw new LoginRateLimited();
+      }
+
       const [user] = await getDb().select().from(users).where(eq(users.email, email)).limit(1);
       const valid = await verifyPassword(password, user?.passwordHash);
-      if (!user || !valid) return null;
+      if (!user || !valid) {
+        await rateLimit(emailKey, LOGIN_EMAIL_LIMIT);
+        return null;
+      }
       return { id: user.id, name: user.name, email: user.email, image: user.image };
     },
   }),

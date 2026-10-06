@@ -2,9 +2,9 @@
 
 import { createHash, randomBytes } from "node:crypto";
 import { and, desc, eq, gt } from "drizzle-orm";
-import { AuthError } from "next-auth";
+import { AuthError, CredentialsSignin } from "next-auth";
 import { redirect } from "next/navigation";
-import { enabledOAuthProviders, signIn, signOut } from "@/auth";
+import { LOGIN_RATE_LIMITED, enabledOAuthProviders, signIn, signOut } from "@/auth";
 import { hashPassword } from "@/lib/auth/password";
 import {
   authFieldErrors,
@@ -18,10 +18,18 @@ import {
 import { getDb } from "@/lib/db";
 import { passwordResetTokens, users } from "@/lib/db/schema";
 import { sendPasswordReset } from "@/lib/email/send-password-reset";
+import { rateLimit, retryMinutes, type RateLimitOptions } from "@/lib/rate-limit";
+import { clientIp } from "@/lib/request";
 import { siteUrl } from "@/lib/site-url";
 
 const RESET_TTL_MINUTES = 60;
 const RESET_RESEND_COOLDOWN_MS = 60_000;
+
+const REGISTER_IP_LIMIT = { limit: 5, windowSeconds: 60 * 60 };
+const FORGOT_IP_LIMIT = { limit: 5, windowSeconds: 15 * 60 };
+/** Caps reset emails to one inbox, whatever the source IP. */
+const FORGOT_EMAIL_LIMIT = { limit: 5, windowSeconds: 24 * 60 * 60 };
+const RESET_IP_LIMIT = { limit: 10, windowSeconds: 15 * 60 };
 
 export type AuthResult =
   | { status: "invalid"; fieldErrors: AuthFieldErrors; message?: string }
@@ -35,11 +43,27 @@ const GENERIC_ERROR = "Đã có lỗi xảy ra. Vui lòng thử lại.";
 
 const hashToken = (token: string) => createHash("sha256").update(token).digest("hex");
 
+/** Returns an error result once the caller's IP exceeds `options` for `action`. */
+async function limitByIp(action: string, options: RateLimitOptions): Promise<AuthResult | null> {
+  const result = await rateLimit(`${action}:ip:${await clientIp()}`, options);
+  if (result.ok) return null;
+  return {
+    status: "error",
+    message: `Bạn thử quá nhiều lần. Vui lòng thử lại sau ${retryMinutes(result)} phút.`,
+  };
+}
+
 /** On success `signIn` throws Next's redirect, which must propagate. */
 async function signInWithPassword(email: string, password: string, callbackUrl: unknown): Promise<AuthResult> {
   try {
     await signIn("credentials", { email, password, redirectTo: safeRedirectPath(callbackUrl) });
   } catch (error) {
+    if (error instanceof CredentialsSignin && error.code === LOGIN_RATE_LIMITED) {
+      return {
+        status: "error",
+        message: "Bạn đã đăng nhập sai quá nhiều lần. Vui lòng thử lại sau 15 phút hoặc dùng Quên mật khẩu.",
+      };
+    }
     if (error instanceof AuthError) {
       return error.type === "CredentialsSignin"
         ? { status: "error", message: "Email hoặc mật khẩu không đúng." }
@@ -60,6 +84,9 @@ export async function register(input: AuthInput): Promise<AuthResult> {
   const parsed = registerSchema.safeParse(input);
   if (!parsed.success) return { status: "invalid", fieldErrors: authFieldErrors(parsed.error) };
   const { name, email, password } = parsed.data;
+
+  const limited = await limitByIp("register", REGISTER_IP_LIMIT);
+  if (limited) return limited;
 
   const passwordHash = await hashPassword(password);
   const [created] = await getDb()
@@ -96,6 +123,12 @@ export async function requestPasswordReset(input: AuthInput): Promise<AuthResult
   if (!parsed.success) return { status: "invalid", fieldErrors: authFieldErrors(parsed.error) };
 
   try {
+    const limited = await limitByIp("forgot-password", FORGOT_IP_LIMIT);
+    if (limited) return limited;
+    if (!(await rateLimit(`forgot-password:email:${parsed.data.email}`, FORGOT_EMAIL_LIMIT)).ok) {
+      return { status: "sent" };
+    }
+
     const db = getDb();
     const [user] = await db
       .select({ id: users.id, name: users.name, email: users.email })
@@ -145,6 +178,9 @@ export async function resetPassword(input: AuthInput): Promise<AuthResult> {
       ? { status: "invalid", fieldErrors }
       : { status: "error", message: "Liên kết đặt lại mật khẩu không hợp lệ." };
   }
+
+  const limited = await limitByIp("reset-password", RESET_IP_LIMIT);
+  if (limited) return limited;
 
   const passwordHash = await hashPassword(parsed.data.password);
   const updated = await getDb().transaction(async (tx) => {
