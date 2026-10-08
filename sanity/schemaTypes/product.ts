@@ -28,6 +28,14 @@ export const productType = defineType({
       validation: (rule) => rule.required(),
     }),
     defineField({
+      name: "code",
+      title: "Product code",
+      type: "string",
+      group: "main",
+      description: "Shown as “Mã sản phẩm” under the name. Defaults to the shared SKU prefix when empty.",
+      validation: (rule) => rule.max(40),
+    }),
+    defineField({
       name: "images",
       type: "array",
       group: "main",

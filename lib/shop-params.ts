@@ -3,6 +3,7 @@ import {
   PRICE_BOUNDS,
   SIZES,
   isCategory,
+  normalizeSize,
   isDressStyle,
   type CategoryId,
   type DressStyleId,
@@ -64,7 +65,8 @@ export function parseShopParams(params: ShopSearchParams): ShopQuery {
       : "casual";
 
   const color = first(params.color);
-  const size = first(params.size);
+  const sizeParam = first(params.size);
+  const size = sizeParam && normalizeSize(sizeParam);
   const price = parsePrice(first(params.price));
   const facets =
     color &&

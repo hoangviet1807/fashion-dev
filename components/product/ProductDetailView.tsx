@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import type { ProductPageSettings } from "@/lib/data/content";
 import { discountPercent } from "@/lib/product";
 import type { Product, ProductSummary } from "@/lib/types/product";
 import { Container } from "@/components/layout/Container";
@@ -14,12 +15,21 @@ import { Rating } from "@/components/ui/Rating";
 import { Price } from "@/components/ui/Price";
 import { RevealGroup, RevealItem } from "@/components/motion/Reveal";
 
+const thousands = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 });
+
+/** 950 → "950", 1250 → "1,3k". */
+function formatSold(count: number) {
+  return count < 1000 ? String(count) : `${thousands.format(count / 1000)}k`;
+}
+
 export function ProductDetailView({
   product,
   related,
+  settings,
 }: {
   product: Product;
   related: ProductSummary[];
+  settings: ProductPageSettings;
 }) {
   const [galleryIndex, setGalleryIndex] = useState(0);
   const breadcrumb: { label: string; href?: string }[] = [
@@ -79,8 +89,25 @@ export function ProductDetailView({
             <h1 className="font-display text-[24px] leading-[28px] uppercase xl:text-[40px] xl:leading-[48px]">
               {product.name}
             </h1>
-            <div className="mt-3 xl:mt-3.5">
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm leading-none text-text-60 xl:mt-3.5">
               <Rating value={product.rating} />
+              {product.reviewCount > 0 ? <span>({product.reviewCount} đánh giá)</span> : null}
+              {product.soldCount > 0 ? (
+                <>
+                  <span aria-hidden className="h-3.5 w-px bg-line" />
+                  <span>
+                    Đã bán <span className="font-medium text-black">{formatSold(product.soldCount)}</span>
+                  </span>
+                </>
+              ) : null}
+              {product.code ? (
+                <>
+                  <span aria-hidden className="h-3.5 w-px bg-line" />
+                  <span>
+                    Mã: <span className="font-medium text-black">{product.code}</span>
+                  </span>
+                </>
+              ) : null}
             </div>
             <div className="mt-3 xl:mt-3.5">
               <Price
@@ -94,7 +121,7 @@ export function ProductDetailView({
               {product.description}
             </p>
             <hr className="my-6 border-line" />
-            <ProductPurchase product={product} />
+            <ProductPurchase product={product} settings={settings} />
           </div>
         </div>
 

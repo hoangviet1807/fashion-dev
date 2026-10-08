@@ -10,6 +10,7 @@ import {
 } from "@/sanity/lib/queries";
 import type { SHOP_PRODUCTS_QUERY_RESULT } from "@/sanity.types";
 import { discountPercent, sortSizes } from "@/lib/product";
+import { getSoldCount } from "@/lib/orders/sold";
 import { getProductReviews, type ProductReviews } from "@/lib/reviews/server";
 import { searchTerms } from "@/lib/search";
 import type {
@@ -89,11 +90,13 @@ export async function getProductBySlug(
 
   const summary = toSummary(data);
   const images = data.images.filter((image): image is string => Boolean(image));
-  const reviews = await loadReviews(slug);
+  const [reviews, soldCount] = await Promise.all([loadReviews(slug), loadSoldCount(slug)]);
 
   return {
     ...summary,
     rating: reviews ? reviews.summary.average : summary.rating,
+    code: data.code?.trim() || skuPrefix(data.variants.map((variant) => variant.sku)),
+    soldCount,
     description: data.description ?? "",
     categoryTitle: data.categoryTitle ?? data.category,
     brand: data.brand ?? undefined,
@@ -119,6 +122,27 @@ async function loadReviews(slug: string): Promise<ProductReviews | null> {
     console.error(`[reviews] Failed to load reviews for ${slug}`, error);
     return null;
   }
+}
+
+async function loadSoldCount(slug: string): Promise<number> {
+  try {
+    return await getSoldCount(slug);
+  } catch (error) {
+    console.error(`[orders] Failed to load sold count for ${slug}`, error);
+    return 0;
+  }
+}
+
+/** Dash-separated segments every SKU starts with, e.g. ONE-LIFE for ONE-LIFE-BLACK-M. */
+function skuPrefix(skus: string[]): string {
+  if (skus.length === 0) return "";
+  const split = skus.map((sku) => sku.split("-"));
+  const shared: string[] = [];
+  for (const [index, part] of split[0].entries()) {
+    if (split.some((parts) => parts.length <= index + 1 || parts[index] !== part)) break;
+    shared.push(part);
+  }
+  return shared.join("-");
 }
 
 export async function getAllProductSlugs(): Promise<string[]> {

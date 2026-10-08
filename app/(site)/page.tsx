@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { Hero } from "@/components/home/Hero";
+import { HeroSlider } from "@/components/home/HeroSlider";
 import { BrandBar } from "@/components/home/BrandBar";
 import { ProductSection } from "@/components/home/ProductSection";
 import { DressStyleGrid } from "@/components/home/DressStyleGrid";
 import { Testimonials } from "@/components/home/Testimonials";
-import { getBrands, getTestimonials } from "@/lib/data/content";
+import { getBrands, getHeroSlides, getTestimonials } from "@/lib/data/content";
 import { getCollection } from "@/lib/data/products";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { organizationJsonLd } from "@/lib/seo";
@@ -14,7 +15,8 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
-  const [brands, newArrivals, topSelling, testimonials] = await Promise.all([
+  const [heroSlides, brands, newArrivals, topSelling, testimonials] = await Promise.all([
+    getHeroSlides(),
     getBrands(),
     getCollection("newArrivals"),
     getCollection("topSelling"),
@@ -24,7 +26,7 @@ export default async function Home() {
   return (
     <>
       <JsonLd data={organizationJsonLd()} />
-      <Hero />
+      {heroSlides.length > 0 ? <HeroSlider slides={heroSlides} /> : <Hero />}
       <BrandBar brands={brands} />
       <ProductSection
         id="new-arrivals"

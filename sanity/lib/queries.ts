@@ -53,6 +53,7 @@ export const PRODUCT_BY_SLUG_QUERY = defineQuery(`
   *[_type == "product" && slug.current == $slug][0] {
     ${PRODUCT_CARD},
     description,
+    code,
     "categoryTitle": category->title,
     "brand": brand->name,
     "images": images[].asset->url,
@@ -126,7 +127,35 @@ export const HOME_COLLECTIONS_QUERY = defineQuery(`
 `);
 
 export const ANNOUNCEMENT_QUERY = defineQuery(`
-  *[_id == "siteSettings"][0].announcement { enabled, text, linkLabel, linkHref }
+  *[_id == "siteSettings"][0].announcement { enabled, text, linkLabel, linkHref, extraMessages }
+`);
+
+export const FREE_SHIPPING_QUERY = defineQuery(`
+  *[_id == "siteSettings"][0].freeShippingThreshold
+`);
+
+export const HERO_SLIDES_QUERY = defineQuery(`
+  *[_id == "siteSettings"][0].heroSlides[defined(image.asset)] {
+    "id": _key,
+    media,
+    image,
+    mobileImage,
+    "videoUrl": video.asset->url,
+    alt,
+    heading,
+    subheading,
+    ctaLabel,
+    ctaHref,
+    tone,
+    duration
+  }
+`);
+
+export const PRODUCT_PAGE_SETTINGS_QUERY = defineQuery(`
+  *[_id == "siteSettings"][0] {
+    "perks": productPerks[] { icon, text },
+    sizeGuide { "rows": rows[] { size, height, weight }, note }
+  }
 `);
 
 export const TESTIMONIALS_QUERY = defineQuery(`

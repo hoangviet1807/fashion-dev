@@ -1,8 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion } from "motion/react";
 import { EASE_OUT } from "@/components/motion/Reveal";
+
+const ZOOM_SCALE = 2;
 
 export function ProductGallery({
   images,
@@ -16,6 +19,7 @@ export function ProductGallery({
   onSelect: (index: number) => void;
 }) {
   const active = images[activeIndex] ?? images[0];
+  const [zoom, setZoom] = useState<{ x: number; y: number } | null>(null);
 
   return (
     <div className="flex w-full flex-col gap-3.5 xl:w-auto xl:flex-row xl:gap-3.5">
@@ -52,7 +56,18 @@ export function ProductGallery({
         })}
       </div>
 
-      <div className="relative order-1 aspect-[358/290] w-full overflow-hidden rounded-[20px] bg-product xl:order-2 xl:h-[530px] xl:w-[444px] xl:aspect-auto xl:shrink-0">
+      <div
+        className="relative order-1 aspect-[358/290] w-full overflow-hidden rounded-[20px] bg-product xl:order-2 xl:h-[530px] xl:w-[444px] xl:aspect-auto xl:shrink-0 [@media(pointer:fine)]:cursor-zoom-in"
+        onPointerMove={(event) => {
+          if (event.pointerType !== "mouse") return;
+          const rect = event.currentTarget.getBoundingClientRect();
+          setZoom({
+            x: ((event.clientX - rect.left) / rect.width) * 100,
+            y: ((event.clientY - rect.top) / rect.height) * 100,
+          });
+        }}
+        onPointerLeave={() => setZoom(null)}
+      >
         <AnimatePresence initial={false}>
           <motion.div
             key={active}
@@ -62,14 +77,22 @@ export function ProductGallery({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5, ease: EASE_OUT }}
           >
-            <Image
-              src={active}
-              alt={name}
-              fill
-              priority
-              sizes="(max-width: 1280px) 100vw, 444px"
-              className="object-cover"
-            />
+            <div
+              className="absolute inset-0 transition-transform duration-200 ease-out"
+              style={{
+                transform: zoom ? `scale(${ZOOM_SCALE})` : undefined,
+                transformOrigin: zoom ? `${zoom.x}% ${zoom.y}%` : undefined,
+              }}
+            >
+              <Image
+                src={active}
+                alt={name}
+                fill
+                priority
+                sizes={`(max-width: 1280px) 100vw, ${444 * ZOOM_SCALE}px`}
+                className="object-cover"
+              />
+            </div>
           </motion.div>
         </AnimatePresence>
       </div>

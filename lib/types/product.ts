@@ -41,6 +41,10 @@ export type Product = {
   discount?: number;
   rating: number;
   reviewCount: number;
+  /** "Mã sản phẩm"; empty when neither set in Studio nor derivable from SKUs. */
+  code: string;
+  /** Units in confirmed orders. */
+  soldCount: number;
   /** Category slug. */
   category: string;
   categoryTitle: string;

@@ -7,6 +7,16 @@ export type ShippingMethodId = keyof typeof SHIPPING_METHODS;
 
 export const DELIVERY_FEE = SHIPPING_METHODS.standard.fee;
 
+/** Standard delivery is free once the subtotal reaches `freeFrom` (null = never). */
+export function deliveryFeeFor(
+  method: ShippingMethodId,
+  subtotal: number,
+  freeFrom: number | null,
+) {
+  if (method === "standard" && freeFrom !== null && subtotal >= freeFrom) return 0;
+  return SHIPPING_METHODS[method].fee;
+}
+
 export function cartSubtotal(items: { price: number; quantity: number }[]) {
   return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 }

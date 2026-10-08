@@ -6,10 +6,12 @@ export type StyleCard = {
   image: string;
   href: string;
   size: "narrow" | "wide";
+  /** The subject stands on the left of the photo; flip it so the label stays clear. */
+  mirrored?: boolean;
 };
 
 const STYLE_TILES: Omit<StyleCard, "name">[] = [
-  { id: "casual", image: "/images/style-casual.png", href: "/shop?style=casual", size: "narrow" },
+  { id: "casual", image: "/images/style-casual.png", href: "/shop?style=casual", size: "narrow", mirrored: true },
   { id: "formal", image: "/images/style-formal.png", href: "/shop?style=formal", size: "wide" },
   { id: "party", image: "/images/style-party.png", href: "/shop?style=party", size: "wide" },
   { id: "gym", image: "/images/style-gym.png", href: "/shop?style=gym", size: "narrow" },

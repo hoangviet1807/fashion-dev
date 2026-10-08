@@ -1,9 +1,9 @@
 import { client } from "@/sanity/lib/client";
-import { CHECKOUT_VARIANTS_QUERY } from "@/sanity/lib/queries";
+import { CHECKOUT_VARIANTS_QUERY, FREE_SHIPPING_QUERY } from "@/sanity/lib/queries";
 import {
-  SHIPPING_METHODS,
   cartSubtotal,
   cartTotal,
+  deliveryFeeFor,
   type ShippingMethodId,
 } from "@/lib/cart-data";
 import type { CartLine } from "@/lib/cart/store";
@@ -34,6 +34,12 @@ export type Quote = {
 /** Uncached, non-CDN read so prices and stock are current. */
 const freshClient = client.withConfig({ useCdn: false });
 
+/** Current free-shipping threshold in VND, or null when shipping is always charged. */
+export async function fetchFreeShippingThreshold(): Promise<number | null> {
+  const value = await freshClient.fetch(FREE_SHIPPING_QUERY, {}, { cache: "no-store" });
+  return typeof value === "number" && value > 0 ? value : null;
+}
+
 export async function fetchVariants(skus: string[]) {
   const products = await freshClient.fetch(
     CHECKOUT_VARIANTS_QUERY,
@@ -62,7 +68,10 @@ export async function quoteCart(
     requested.set(item.sku, (requested.get(item.sku) ?? 0) + item.quantity);
   }
 
-  const variants = await fetchVariants([...requested.keys()]);
+  const [variants, freeShippingFrom] = await Promise.all([
+    fetchVariants([...requested.keys()]),
+    fetchFreeShippingThreshold(),
+  ]);
 
   const lines: CartLine[] = [];
   const issues: QuoteIssue[] = [];
@@ -114,7 +123,7 @@ export async function quoteCart(
   }
 
   const subtotal = cartSubtotal(lines);
-  const deliveryFee = SHIPPING_METHODS[shipping].fee;
+  const deliveryFee = deliveryFeeFor(shipping, subtotal, freeShippingFrom);
 
   let coupon: Quote["coupon"] = null;
   let discount = 0;

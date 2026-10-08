@@ -9,12 +9,14 @@ import { applyPromo } from "@/app/(site)/cart/actions";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import { Icon } from "@/components/ui/Icon";
+import { FreeShippingProgress } from "@/components/cart/FreeShippingProgress";
 
 export function OrderSummary({
   subtotal,
   discount,
   total,
   deliveryFee = DELIVERY_FEE,
+  freeShippingFrom = null,
   children,
   action,
 }: {
@@ -22,6 +24,8 @@ export function OrderSummary({
   discount: number;
   total: number;
   deliveryFee?: number;
+  /** Shows progress towards free standard shipping; null hides it. */
+  freeShippingFrom?: number | null;
   /** Rendered between the heading and the totals. */
   children?: React.ReactNode;
   /** Replaces the default "Go to Checkout" button. */
@@ -66,6 +70,8 @@ export function OrderSummary({
 
       {children}
 
+      <FreeShippingProgress subtotal={subtotal} threshold={freeShippingFrom} className="mt-4 xl:mt-6" />
+
       <div className="mt-4 flex flex-col gap-5 xl:mt-6">
         <div className="flex items-center justify-between text-base xl:text-xl">
           <span className="text-text-60">Tạm tính</span>
@@ -79,7 +85,9 @@ export function OrderSummary({
         ) : null}
         <div className="flex items-center justify-between text-base xl:text-xl">
           <span className="text-text-60">Phí vận chuyển</span>
-          <span className="font-bold text-black">{formatPrice(deliveryFee)}</span>
+          <span className="font-bold text-black">
+            {deliveryFee === 0 ? "Miễn phí" : formatPrice(deliveryFee)}
+          </span>
         </div>
 
         <hr className="border-line" />

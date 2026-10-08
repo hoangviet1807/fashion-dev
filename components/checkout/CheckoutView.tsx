@@ -7,6 +7,7 @@ import {
   SHIPPING_METHODS,
   cartSubtotal,
   cartTotal,
+  deliveryFeeFor,
   type ShippingMethodId,
 } from "@/lib/cart-data";
 import { toAnalyticsItem, trackEcommerce } from "@/lib/analytics";
@@ -33,6 +34,8 @@ import { Icon } from "@/components/ui/Icon";
 import { SelectField } from "@/components/ui/SelectField";
 import { TextField } from "@/components/ui/TextField";
 import { OrderSummary } from "@/components/cart/OrderSummary";
+import { PaymentLogo } from "@/components/checkout/PaymentLogo";
+import { STEPPER_BUTTON } from "@/components/ui/choice";
 
 const FORM_ID = "checkout-form";
 
@@ -48,14 +51,18 @@ function toLineInput(items: CartLine[]) {
 export function CheckoutView({
   paymentFailed = false,
   defaults = {},
+  freeShippingFrom = null,
 }: {
   paymentFailed?: boolean;
   defaults?: CheckoutDefaults;
+  freeShippingFrom?: number | null;
 }) {
   const router = useRouter();
   const hydrated = useCartHydrated();
   const items = useCartStore((state) => state.items);
   const replace = useCartStore((state) => state.replace);
+  const updateQty = useCartStore((state) => state.updateQty);
+  const remove = useCartStore((state) => state.remove);
   const coupon = useCartStore((state) => state.coupon);
   const setCoupon = useCartStore((state) => state.setCoupon);
 
@@ -80,7 +87,7 @@ export function CheckoutView({
 
   const subtotal = useMemo(() => cartSubtotal(items), [items]);
   const discount = useMemo(() => couponDiscount(coupon, subtotal), [coupon, subtotal]);
-  const deliveryFee = SHIPPING_METHODS[shipping].fee;
+  const deliveryFee = deliveryFeeFor(shipping, subtotal, freeShippingFrom);
   const total = cartTotal(subtotal, discount, deliveryFee);
 
   useEffect(() => {
@@ -194,7 +201,7 @@ export function CheckoutView({
 
   return (
     <div>
-      <Container className="pb-20 xl:pb-[80px]">
+      <Container className="pb-28 xl:pb-[80px]">
         <hr className="border-line" />
         <div className="pt-5 xl:pt-6">
           <ShopBreadcrumb current="Thanh toán" />
@@ -271,18 +278,32 @@ export function CheckoutView({
 
                 <Section title="Phương thức giao hàng">
                   <div role="radiogroup" aria-label="Phương thức giao hàng" className="flex flex-col gap-3">
-                    {(Object.keys(SHIPPING_METHODS) as ShippingMethodId[]).map((id) => (
-                      <Choice
-                        key={id}
-                        name="shipping"
-                        value={id}
-                        checked={shipping === id}
-                        onSelect={() => setShipping(id)}
-                        title={SHIPPING_METHODS[id].label}
-                        note={SHIPPING_METHODS[id].eta}
-                        aside={formatPrice(SHIPPING_METHODS[id].fee)}
-                      />
-                    ))}
+                    {(Object.keys(SHIPPING_METHODS) as ShippingMethodId[]).map((id) => {
+                      const fee = deliveryFeeFor(id, subtotal, freeShippingFrom);
+                      return (
+                        <Choice
+                          key={id}
+                          name="shipping"
+                          value={id}
+                          checked={shipping === id}
+                          onSelect={() => setShipping(id)}
+                          title={SHIPPING_METHODS[id].label}
+                          note={SHIPPING_METHODS[id].eta}
+                          aside={
+                            fee === 0 ? (
+                              <span className="flex flex-col items-end leading-tight">
+                                <span>Miễn phí</span>
+                                <s className="text-sm font-normal text-text-40">
+                                  {formatPrice(SHIPPING_METHODS[id].fee)}
+                                </s>
+                              </span>
+                            ) : (
+                              formatPrice(fee)
+                            )
+                          }
+                        />
+                      );
+                    })}
                   </div>
                 </Section>
 
@@ -299,6 +320,7 @@ export function CheckoutView({
                           onSelect={() => setPayment(id)}
                           title={PAYMENT_METHODS[id].label}
                           note={PAYMENT_METHODS[id].note}
+                          aside={<PaymentLogo method={id} />}
                         />
                         {id === "vnpay" && payment === "vnpay" ? (
                           <div
@@ -330,6 +352,7 @@ export function CheckoutView({
                 discount={discount}
                 total={total}
                 deliveryFee={deliveryFee}
+                freeShippingFrom={freeShippingFrom}
                 action={
                   <Button
                     type="submit"
@@ -349,24 +372,74 @@ export function CheckoutView({
               >
                 <ul className="mt-4 flex flex-col gap-4 xl:mt-6">
                   {items.map((item) => (
-                    <li key={item.sku} className="flex items-center gap-3">
+                    <li key={item.sku} className="flex items-start gap-3">
                       <div className="relative size-16 shrink-0 overflow-hidden rounded-[8.66px] bg-product">
                         <Image src={item.image} alt={item.name} fill className="object-cover" sizes="64px" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-base font-bold text-black">{item.name}</p>
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="truncate text-base font-bold text-black">{item.name}</p>
+                          <span className="shrink-0 text-base font-bold text-black">
+                            {formatPrice(item.price * item.quantity)}
+                          </span>
+                        </div>
                         <p className="text-sm text-text-60">
-                          {item.size} · {colorLabel(item.color)} · ×{item.quantity}
+                          {item.size} · {colorLabel(item.color)}
                         </p>
+                        <div className="mt-2 flex items-center justify-between gap-3">
+                          <div className="flex h-8 w-[96px] items-center justify-between rounded-[62px] bg-muted px-3.5">
+                            <button
+                              type="button"
+                              aria-label={`Giảm số lượng ${item.name}`}
+                              onClick={() => updateQty(item.sku, item.quantity - 1)}
+                              disabled={item.quantity <= 1 || pending || leaving}
+                              className={STEPPER_BUTTON}
+                            >
+                              −
+                            </button>
+                            <span className="text-sm font-medium">{item.quantity}</span>
+                            <button
+                              type="button"
+                              aria-label={`Tăng số lượng ${item.name}`}
+                              onClick={() => updateQty(item.sku, item.quantity + 1)}
+                              disabled={item.quantity >= item.stock || pending || leaving}
+                              className={STEPPER_BUTTON}
+                            >
+                              +
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => remove(item.sku)}
+                            disabled={pending || leaving}
+                            className="text-sm text-text-60 underline underline-offset-4 transition-colors hover:text-discount disabled:opacity-50"
+                          >
+                            Xoá
+                          </button>
+                        </div>
                       </div>
-                      <span className="shrink-0 text-base font-bold text-black">
-                        {formatPrice(item.price * item.quantity)}
-                      </span>
                     </li>
                   ))}
                 </ul>
                 <hr className="mt-4 border-line xl:mt-6" />
               </OrderSummary>
+            </div>
+
+            <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] backdrop-blur xl:hidden">
+              <div className="flex items-center gap-4">
+                <div className="min-w-0">
+                  <p className="text-xs text-text-60">Tổng cộng</p>
+                  <p className="text-lg leading-tight font-bold text-black">{formatPrice(total)}</p>
+                </div>
+                <Button
+                  type="submit"
+                  form={FORM_ID}
+                  disabled={pending || leaving}
+                  className="h-12 flex-1 px-6 text-sm"
+                >
+                  {pending || leaving ? "Đang đặt hàng…" : "Đặt hàng"}
+                </Button>
+              </div>
             </div>
           </>
         )}
@@ -459,7 +532,7 @@ function Choice({
   onSelect: () => void;
   title: string;
   note: string;
-  aside?: string;
+  aside?: React.ReactNode;
 }) {
   return (
     <label

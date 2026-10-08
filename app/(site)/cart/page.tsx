@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CartView } from "@/components/cart/CartView";
+import { getFreeShippingThreshold } from "@/lib/data/content";
 
 export const metadata: Metadata = {
   title: "Giỏ hàng | SHOP.CO",
@@ -7,6 +8,6 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function CartPage() {
-  return <CartView />;
+export default async function CartPage() {
+  return <CartView freeShippingFrom={await getFreeShippingThreshold()} />;
 }

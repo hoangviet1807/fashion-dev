@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, type PanInfo } from "motion/react";
 import type { Testimonial } from "@/lib/data/content";
 import { Reveal } from "@/components/motion/Reveal";
 import { Container } from "@/components/layout/Container";
@@ -40,6 +40,8 @@ function TestimonialCard({
 }
 
 const SPRING = { type: "spring", stiffness: 260, damping: 32 } as const;
+const SWIPE_OFFSET = 50;
+const SWIPE_VELOCITY = 500;
 
 export function Testimonials({ reviews }: { reviews: Testimonial[] }) {
   const [[index, direction], setPosition] = useState<[number, 1 | -1]>([0, 1]);
@@ -52,6 +54,19 @@ export function Testimonials({ reviews }: { reviews: Testimonial[] }) {
   function next() {
     setPosition(([value]) => [value === last ? 0 : value + 1, 1]);
   }
+
+  function handleDragEnd(_: unknown, { offset, velocity }: PanInfo) {
+    if (offset.x < -SWIPE_OFFSET || velocity.x < -SWIPE_VELOCITY) next();
+    else if (offset.x > SWIPE_OFFSET || velocity.x > SWIPE_VELOCITY) prev();
+  }
+
+  const dragProps = {
+    drag: "x",
+    dragSnapToOrigin: true,
+    dragElastic: 0.2,
+    onDragEnd: handleDragEnd,
+    className: "cursor-grab touch-pan-y active:cursor-grabbing",
+  } as const;
 
   if (reviews.length === 0) return null;
 
@@ -77,7 +92,7 @@ export function Testimonials({ reviews }: { reviews: Testimonial[] }) {
         </Reveal>
       </Container>
 
-      <div className="md:hidden">
+      <motion.div {...dragProps} className={`md:hidden ${dragProps.className}`}>
         <Container className="grid">
           <AnimatePresence initial={false} custom={direction}>
             <motion.div
@@ -101,25 +116,27 @@ export function Testimonials({ reviews }: { reviews: Testimonial[] }) {
             </motion.div>
           </AnimatePresence>
         </Container>
-      </div>
+      </motion.div>
 
       <Reveal delay={0.1} className="relative hidden md:block">
         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-linear-to-r from-white to-transparent xl:w-[80px]" />
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-linear-to-l from-white to-transparent xl:w-[80px]" />
         <div className="overflow-hidden">
-          <motion.div
-            className="flex gap-5 px-4 xl:px-[100px]"
-            initial={false}
-            animate={{ x: index * -420 }}
-            transition={SPRING}
-          >
-            {reviews.map((review) => (
-              <TestimonialCard
-                key={review.id}
-                name={review.name}
-                quote={review.quote}
-              />
-            ))}
+          <motion.div {...dragProps}>
+            <motion.div
+              className="flex gap-5 px-4 xl:px-[100px]"
+              initial={false}
+              animate={{ x: index * -420 }}
+              transition={SPRING}
+            >
+              {reviews.map((review) => (
+                <TestimonialCard
+                  key={review.id}
+                  name={review.name}
+                  quote={review.quote}
+                />
+              ))}
+            </motion.div>
           </motion.div>
         </div>
       </Reveal>

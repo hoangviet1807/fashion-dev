@@ -22,6 +22,20 @@ export type ProductReference = {
   [internalGroqTypeReferenceTo]?: "product";
 };
 
+export type SanityImageAssetReference = {
+  _ref: string;
+  _type: "reference";
+  _weak?: boolean;
+  [internalGroqTypeReferenceTo]?: "sanity.imageAsset";
+};
+
+export type SanityFileAssetReference = {
+  _ref: string;
+  _type: "reference";
+  _weak?: boolean;
+  [internalGroqTypeReferenceTo]?: "sanity.fileAsset";
+};
+
 export type SiteSettings = {
   _id: string;
   _type: "siteSettings";
@@ -38,17 +52,82 @@ export type SiteSettings = {
       _key: string;
     } & ProductReference
   >;
+  heroSlides?: Array<{
+    media: "image" | "video";
+    image: {
+      asset?: SanityImageAssetReference;
+      media?: unknown;
+      hotspot?: SanityImageHotspot;
+      crop?: SanityImageCrop;
+      _type: "image";
+    };
+    mobileImage?: {
+      asset?: SanityImageAssetReference;
+      media?: unknown;
+      hotspot?: SanityImageHotspot;
+      crop?: SanityImageCrop;
+      _type: "image";
+    };
+    video?: {
+      asset?: SanityFileAssetReference;
+      media?: unknown;
+      _type: "file";
+    };
+    alt?: string;
+    heading?: string;
+    subheading?: string;
+    ctaLabel?: string;
+    ctaHref?: string;
+    tone?: "dark" | "light";
+    duration?: number;
+    _type: "heroSlide";
+    _key: string;
+  }>;
   announcement?: {
     enabled?: boolean;
     text?: string;
     linkLabel?: string;
     linkHref?: string;
+    extraMessages?: Array<string>;
   };
+  freeShippingThreshold?: number;
   productFaqs?: Array<
     {
       _key: string;
     } & Faq
   >;
+  productPerks?: Array<{
+    icon: "shipping" | "returns" | "hotline" | "store" | "payment";
+    text: string;
+    _type: "perk";
+    _key: string;
+  }>;
+  sizeGuide?: {
+    rows?: Array<{
+      size: string;
+      height?: string;
+      weight?: string;
+      _type: "sizeGuideRow";
+      _key: string;
+    }>;
+    note?: string;
+  };
+};
+
+export type SanityImageCrop = {
+  _type: "sanity.imageCrop";
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+};
+
+export type SanityImageHotspot = {
+  _type: "sanity.imageHotspot";
+  x: number;
+  y: number;
+  height: number;
+  width: number;
 };
 
 export type Page = {
@@ -130,24 +209,8 @@ export type ProductVariant = {
     | "olive"
     | "forest"
     | "navy";
-  size:
-    | "XX-Small"
-    | "X-Small"
-    | "Small"
-    | "Medium"
-    | "Large"
-    | "X-Large"
-    | "XX-Large"
-    | "3X-Large"
-    | "4X-Large";
+  size: "XXS" | "XS" | "S" | "M" | "L" | "XL" | "2XL" | "3XL" | "4XL";
   stock: number;
-};
-
-export type SanityImageAssetReference = {
-  _ref: string;
-  _type: "reference";
-  _weak?: boolean;
-  [internalGroqTypeReferenceTo]?: "sanity.imageAsset";
 };
 
 export type CategoryReference = {
@@ -179,6 +242,7 @@ export type Product = {
   _rev: string;
   name: string;
   slug: Slug;
+  code?: string;
   images: Array<{
     asset?: SanityImageAssetReference;
     media?: unknown;
@@ -242,22 +306,6 @@ export type Brand = {
     _type: "image";
   };
   order?: number;
-};
-
-export type SanityImageCrop = {
-  _type: "sanity.imageCrop";
-  top: number;
-  bottom: number;
-  left: number;
-  right: number;
-};
-
-export type SanityImageHotspot = {
-  _type: "sanity.imageHotspot";
-  x: number;
-  y: number;
-  height: number;
-  width: number;
 };
 
 export type Category = {
@@ -369,21 +417,22 @@ export type Geopoint = {
 
 export type AllSanitySchemaTypes =
   | ProductReference
+  | SanityImageAssetReference
+  | SanityFileAssetReference
   | SiteSettings
+  | SanityImageCrop
+  | SanityImageHotspot
   | Page
   | Slug
   | Testimonial
   | DressStyle
   | Faq
   | ProductVariant
-  | SanityImageAssetReference
   | CategoryReference
   | DressStyleReference
   | BrandReference
   | Product
   | Brand
-  | SanityImageCrop
-  | SanityImageHotspot
   | Category
   | SanityImagePaletteSwatch
   | SanityImagePalette
@@ -424,24 +473,14 @@ export type SHOP_PRODUCTS_QUERY_RESULT = {
       | "white"
       | "yellow"
     >;
-    sizes: Array<
-      | "3X-Large"
-      | "4X-Large"
-      | "Large"
-      | "Medium"
-      | "Small"
-      | "X-Large"
-      | "X-Small"
-      | "XX-Large"
-      | "XX-Small"
-    >;
+    sizes: Array<"2XL" | "3XL" | "4XL" | "L" | "M" | "S" | "XL" | "XS" | "XXS">;
   }>;
   total: number;
 };
 
 // Source: sanity/lib/queries.ts
 // Variable: PRODUCT_BY_SLUG_QUERY
-// Query: *[_type == "product" && slug.current == $slug][0] {      _id,  "slug": slug.current,  name,  "image": images[0].asset->url,  price,  compareAtPrice,  discount,  rating,  "category": category->slug.current,  "styles": dressStyles[]->slug.current,  "colors": array::unique(variants[].color),  "sizes": array::unique(variants[].size),    description,    "categoryTitle": category->title,    "brand": brand->name,    "images": images[].asset->url,    reviewCount,    "variants": variants[] { sku, color, size, stock },    details { material, fit, featuresIntro, features },    "faqs": coalesce(faqs, *[_id == "siteSettings"][0].productFaqs)[] {      "id": _key,      question,      answer    }  }
+// Query: *[_type == "product" && slug.current == $slug][0] {      _id,  "slug": slug.current,  name,  "image": images[0].asset->url,  price,  compareAtPrice,  discount,  rating,  "category": category->slug.current,  "styles": dressStyles[]->slug.current,  "colors": array::unique(variants[].color),  "sizes": array::unique(variants[].size),    description,    code,    "categoryTitle": category->title,    "brand": brand->name,    "images": images[].asset->url,    reviewCount,    "variants": variants[] { sku, color, size, stock },    details { material, fit, featuresIntro, features },    "faqs": coalesce(faqs, *[_id == "siteSettings"][0].productFaqs)[] {      "id": _key,      question,      answer    }  }
 export type PRODUCT_BY_SLUG_QUERY_RESULT = {
   _id: string;
   slug: string;
@@ -468,18 +507,9 @@ export type PRODUCT_BY_SLUG_QUERY_RESULT = {
     | "white"
     | "yellow"
   >;
-  sizes: Array<
-    | "3X-Large"
-    | "4X-Large"
-    | "Large"
-    | "Medium"
-    | "Small"
-    | "X-Large"
-    | "X-Small"
-    | "XX-Large"
-    | "XX-Small"
-  >;
+  sizes: Array<"2XL" | "3XL" | "4XL" | "L" | "M" | "S" | "XL" | "XS" | "XXS">;
   description: string | null;
+  code: string | null;
   categoryTitle: string;
   brand: string | null;
   images: Array<string | null>;
@@ -500,16 +530,7 @@ export type PRODUCT_BY_SLUG_QUERY_RESULT = {
       | "red"
       | "white"
       | "yellow";
-    size:
-      | "3X-Large"
-      | "4X-Large"
-      | "Large"
-      | "Medium"
-      | "Small"
-      | "X-Large"
-      | "X-Small"
-      | "XX-Large"
-      | "XX-Small";
+    size: "2XL" | "3XL" | "4XL" | "L" | "M" | "S" | "XL" | "XS" | "XXS";
     stock: number;
   }>;
   details: {
@@ -554,17 +575,7 @@ export type RELATED_PRODUCTS_QUERY_RESULT = Array<{
     | "white"
     | "yellow"
   >;
-  sizes: Array<
-    | "3X-Large"
-    | "4X-Large"
-    | "Large"
-    | "Medium"
-    | "Small"
-    | "X-Large"
-    | "X-Small"
-    | "XX-Large"
-    | "XX-Small"
-  >;
+  sizes: Array<"2XL" | "3XL" | "4XL" | "L" | "M" | "S" | "XL" | "XS" | "XXS">;
 }> | null;
 
 // Source: sanity/lib/queries.ts
@@ -596,17 +607,7 @@ export type PRODUCTS_BY_SLUGS_QUERY_RESULT = Array<{
     | "white"
     | "yellow"
   >;
-  sizes: Array<
-    | "3X-Large"
-    | "4X-Large"
-    | "Large"
-    | "Medium"
-    | "Small"
-    | "X-Large"
-    | "X-Small"
-    | "XX-Large"
-    | "XX-Small"
-  >;
+  sizes: Array<"2XL" | "3XL" | "4XL" | "L" | "M" | "S" | "XL" | "XS" | "XXS">;
 }>;
 
 // Source: sanity/lib/queries.ts
@@ -633,16 +634,7 @@ export type CHECKOUT_VARIANTS_QUERY_RESULT = Array<{
       | "red"
       | "white"
       | "yellow";
-    size:
-      | "3X-Large"
-      | "4X-Large"
-      | "Large"
-      | "Medium"
-      | "Small"
-      | "X-Large"
-      | "X-Small"
-      | "XX-Large"
-      | "XX-Small";
+    size: "2XL" | "3XL" | "4XL" | "L" | "M" | "S" | "XL" | "XS" | "XXS";
     stock: number;
   }>;
 }>;
@@ -670,16 +662,7 @@ export type INVENTORY_DOCS_QUERY_RESULT = Array<{
       | "red"
       | "white"
       | "yellow";
-    size:
-      | "3X-Large"
-      | "4X-Large"
-      | "Large"
-      | "Medium"
-      | "Small"
-      | "X-Large"
-      | "X-Small"
-      | "XX-Large"
-      | "XX-Small";
+    size: "2XL" | "3XL" | "4XL" | "L" | "M" | "S" | "XL" | "XS" | "XXS";
     stock: number;
   }>;
 }>;
@@ -708,16 +691,7 @@ export type LOW_STOCK_QUERY_RESULT = Array<{
       | "red"
       | "white"
       | "yellow";
-    size:
-      | "3X-Large"
-      | "4X-Large"
-      | "Large"
-      | "Medium"
-      | "Small"
-      | "X-Large"
-      | "X-Small"
-      | "XX-Large"
-      | "XX-Small";
+    size: "2XL" | "3XL" | "4XL" | "L" | "M" | "S" | "XL" | "XS" | "XXS";
     stock: number;
   }>;
 }>;
@@ -768,15 +742,7 @@ export type HOME_COLLECTIONS_QUERY_RESULT =
           | "yellow"
         >;
         sizes: Array<
-          | "3X-Large"
-          | "4X-Large"
-          | "Large"
-          | "Medium"
-          | "Small"
-          | "X-Large"
-          | "X-Small"
-          | "XX-Large"
-          | "XX-Small"
+          "2XL" | "3XL" | "4XL" | "L" | "M" | "S" | "XL" | "XS" | "XXS"
         >;
       }> | null;
       topSelling: Array<{
@@ -806,15 +772,7 @@ export type HOME_COLLECTIONS_QUERY_RESULT =
           | "yellow"
         >;
         sizes: Array<
-          | "3X-Large"
-          | "4X-Large"
-          | "Large"
-          | "Medium"
-          | "Small"
-          | "X-Large"
-          | "X-Small"
-          | "XX-Large"
-          | "XX-Small"
+          "2XL" | "3XL" | "4XL" | "L" | "M" | "S" | "XL" | "XS" | "XXS"
         >;
       }> | null;
     }
@@ -822,13 +780,73 @@ export type HOME_COLLECTIONS_QUERY_RESULT =
 
 // Source: sanity/lib/queries.ts
 // Variable: ANNOUNCEMENT_QUERY
-// Query: *[_id == "siteSettings"][0].announcement { enabled, text, linkLabel, linkHref }
+// Query: *[_id == "siteSettings"][0].announcement { enabled, text, linkLabel, linkHref, extraMessages }
 export type ANNOUNCEMENT_QUERY_RESULT = {
   enabled: boolean | null;
   text: string | null;
   linkLabel: string | null;
   linkHref: string | null;
+  extraMessages: Array<string> | null;
 } | null;
+
+// Source: sanity/lib/queries.ts
+// Variable: FREE_SHIPPING_QUERY
+// Query: *[_id == "siteSettings"][0].freeShippingThreshold
+export type FREE_SHIPPING_QUERY_RESULT = number | null;
+
+// Source: sanity/lib/queries.ts
+// Variable: HERO_SLIDES_QUERY
+// Query: *[_id == "siteSettings"][0].heroSlides[defined(image.asset)] {    "id": _key,    media,    image,    mobileImage,    "videoUrl": video.asset->url,    alt,    heading,    subheading,    ctaLabel,    ctaHref,    tone,    duration  }
+export type HERO_SLIDES_QUERY_RESULT = Array<{
+  id: string;
+  media: "image" | "video";
+  image: {
+    asset: SanityImageAssetReference;
+    media?: unknown;
+    hotspot?: SanityImageHotspot;
+    crop?: SanityImageCrop;
+    _type: "image";
+  };
+  mobileImage: {
+    asset?: SanityImageAssetReference;
+    media?: unknown;
+    hotspot?: SanityImageHotspot;
+    crop?: SanityImageCrop;
+    _type: "image";
+  } | null;
+  videoUrl: string | null;
+  alt: string | null;
+  heading: string | null;
+  subheading: string | null;
+  ctaLabel: string | null;
+  ctaHref: string | null;
+  tone: "dark" | "light" | null;
+  duration: number | null;
+}> | null;
+
+// Source: sanity/lib/queries.ts
+// Variable: PRODUCT_PAGE_SETTINGS_QUERY
+// Query: *[_id == "siteSettings"][0] {    "perks": productPerks[] { icon, text },    sizeGuide { "rows": rows[] { size, height, weight }, note }  }
+export type PRODUCT_PAGE_SETTINGS_QUERY_RESULT =
+  | {
+      perks: null;
+      sizeGuide: null;
+    }
+  | {
+      perks: Array<{
+        icon: "hotline" | "payment" | "returns" | "shipping" | "store";
+        text: string;
+      }> | null;
+      sizeGuide: {
+        rows: Array<{
+          size: string;
+          height: string | null;
+          weight: string | null;
+        }> | null;
+        note: string | null;
+      } | null;
+    }
+  | null;
 
 // Source: sanity/lib/queries.ts
 // Variable: TESTIMONIALS_QUERY
@@ -906,7 +924,7 @@ import "@sanity/client";
 declare module "@sanity/client" {
   interface SanityQueries {
     '{\n  "items": *[\n  _type == "product" && defined(slug.current)\n  && (count($terms) == 0 || (\n  [name, category->title, category->slug.current, brand->name]\n  + coalesce(dressStyles[]->title, [])\n  + coalesce(dressStyles[]->slug.current, [])\n  + coalesce(variants[].color, [])\n  + coalesce(tags, [])\n) match $terms || (\n  [name, category->title, category->slug.current, brand->name]\n  + coalesce(dressStyles[]->title, [])\n  + coalesce(dressStyles[]->slug.current, [])\n  + coalesce(variants[].color, [])\n  + coalesce(tags, [])\n) match $altTerms)\n  && (!$sale || compareAtPrice > price || discount > 0)\n  && (!defined($brand) || brand->slug.current == $brand)\n  && (!defined($category) || category->slug.current == $category)\n  && (!defined($style) || $style in dressStyles[]->slug.current)\n  && (!defined($color) || $color in variants[].color)\n  && (!defined($size) || $size in variants[].size)\n  && (!defined($minPrice) || price >= $minPrice)\n  && (!defined($maxPrice) || price <= $maxPrice)\n]\n    | score(boost(name match $terms, 3), boost(name match $altTerms, 3))\n    | order(\n        select($sort == "newest" => _createdAt) desc,\n        select($sort == "low-price" => price, $sort == "high-price" => -price, -_score) asc,\n        popularity desc\n      )\n    [$start...$end] { \n  _id,\n  "slug": slug.current,\n  name,\n  "image": images[0].asset->url,\n  price,\n  compareAtPrice,\n  discount,\n  rating,\n  "category": category->slug.current,\n  "styles": dressStyles[]->slug.current,\n  "colors": array::unique(variants[].color),\n  "sizes": array::unique(variants[].size)\n },\n  "total": count(*[\n  _type == "product" && defined(slug.current)\n  && (count($terms) == 0 || (\n  [name, category->title, category->slug.current, brand->name]\n  + coalesce(dressStyles[]->title, [])\n  + coalesce(dressStyles[]->slug.current, [])\n  + coalesce(variants[].color, [])\n  + coalesce(tags, [])\n) match $terms || (\n  [name, category->title, category->slug.current, brand->name]\n  + coalesce(dressStyles[]->title, [])\n  + coalesce(dressStyles[]->slug.current, [])\n  + coalesce(variants[].color, [])\n  + coalesce(tags, [])\n) match $altTerms)\n  && (!$sale || compareAtPrice > price || discount > 0)\n  && (!defined($brand) || brand->slug.current == $brand)\n  && (!defined($category) || category->slug.current == $category)\n  && (!defined($style) || $style in dressStyles[]->slug.current)\n  && (!defined($color) || $color in variants[].color)\n  && (!defined($size) || $size in variants[].size)\n  && (!defined($minPrice) || price >= $minPrice)\n  && (!defined($maxPrice) || price <= $maxPrice)\n])\n}': SHOP_PRODUCTS_QUERY_RESULT;
-    '\n  *[_type == "product" && slug.current == $slug][0] {\n    \n  _id,\n  "slug": slug.current,\n  name,\n  "image": images[0].asset->url,\n  price,\n  compareAtPrice,\n  discount,\n  rating,\n  "category": category->slug.current,\n  "styles": dressStyles[]->slug.current,\n  "colors": array::unique(variants[].color),\n  "sizes": array::unique(variants[].size)\n,\n    description,\n    "categoryTitle": category->title,\n    "brand": brand->name,\n    "images": images[].asset->url,\n    reviewCount,\n    "variants": variants[] { sku, color, size, stock },\n    details { material, fit, featuresIntro, features },\n    "faqs": coalesce(faqs, *[_id == "siteSettings"][0].productFaqs)[] {\n      "id": _key,\n      question,\n      answer\n    }\n  }\n': PRODUCT_BY_SLUG_QUERY_RESULT;
+    '\n  *[_type == "product" && slug.current == $slug][0] {\n    \n  _id,\n  "slug": slug.current,\n  name,\n  "image": images[0].asset->url,\n  price,\n  compareAtPrice,\n  discount,\n  rating,\n  "category": category->slug.current,\n  "styles": dressStyles[]->slug.current,\n  "colors": array::unique(variants[].color),\n  "sizes": array::unique(variants[].size)\n,\n    description,\n    code,\n    "categoryTitle": category->title,\n    "brand": brand->name,\n    "images": images[].asset->url,\n    reviewCount,\n    "variants": variants[] { sku, color, size, stock },\n    details { material, fit, featuresIntro, features },\n    "faqs": coalesce(faqs, *[_id == "siteSettings"][0].productFaqs)[] {\n      "id": _key,\n      question,\n      answer\n    }\n  }\n': PRODUCT_BY_SLUG_QUERY_RESULT;
     '\n  *[_type == "product" && slug.current == $slug][0] {\n    "items": select(\n      count(relatedProducts) > 0 => relatedProducts[]-> { \n  _id,\n  "slug": slug.current,\n  name,\n  "image": images[0].asset->url,\n  price,\n  compareAtPrice,\n  discount,\n  rating,\n  "category": category->slug.current,\n  "styles": dressStyles[]->slug.current,\n  "colors": array::unique(variants[].color),\n  "sizes": array::unique(variants[].size)\n },\n      *[_type == "product" && defined(slug.current) && slug.current != $slug]\n        | order(popularity desc) [0...4] { \n  _id,\n  "slug": slug.current,\n  name,\n  "image": images[0].asset->url,\n  price,\n  compareAtPrice,\n  discount,\n  rating,\n  "category": category->slug.current,\n  "styles": dressStyles[]->slug.current,\n  "colors": array::unique(variants[].color),\n  "sizes": array::unique(variants[].size)\n }\n    )\n  }.items\n': RELATED_PRODUCTS_QUERY_RESULT;
     '\n  *[_type == "product" && slug.current in $slugs] { \n  _id,\n  "slug": slug.current,\n  name,\n  "image": images[0].asset->url,\n  price,\n  compareAtPrice,\n  discount,\n  rating,\n  "category": category->slug.current,\n  "styles": dressStyles[]->slug.current,\n  "colors": array::unique(variants[].color),\n  "sizes": array::unique(variants[].size)\n }\n': PRODUCTS_BY_SLUGS_QUERY_RESULT;
     '\n  *[_type == "product" && defined(slug.current) && count(variants[sku in $skus]) > 0] {\n    "slug": slug.current,\n    name,\n    "image": images[0].asset->url,\n    price,\n    "variants": variants[sku in $skus] { sku, color, size, stock }\n  }\n': CHECKOUT_VARIANTS_QUERY_RESULT;
@@ -915,7 +933,10 @@ declare module "@sanity/client" {
     '\n  *[_type == "product" && slug.current == $slug]._id\n': PRODUCT_RATING_DOCS_QUERY_RESULT;
     '\n  *[_type == "product" && defined(slug.current)].slug.current\n': PRODUCT_SLUGS_QUERY_RESULT;
     '\n  *[_id == "siteSettings"][0] {\n    "newArrivals": newArrivals[]-> { \n  _id,\n  "slug": slug.current,\n  name,\n  "image": images[0].asset->url,\n  price,\n  compareAtPrice,\n  discount,\n  rating,\n  "category": category->slug.current,\n  "styles": dressStyles[]->slug.current,\n  "colors": array::unique(variants[].color),\n  "sizes": array::unique(variants[].size)\n },\n    "topSelling": topSelling[]-> { \n  _id,\n  "slug": slug.current,\n  name,\n  "image": images[0].asset->url,\n  price,\n  compareAtPrice,\n  discount,\n  rating,\n  "category": category->slug.current,\n  "styles": dressStyles[]->slug.current,\n  "colors": array::unique(variants[].color),\n  "sizes": array::unique(variants[].size)\n }\n  }\n': HOME_COLLECTIONS_QUERY_RESULT;
-    '\n  *[_id == "siteSettings"][0].announcement { enabled, text, linkLabel, linkHref }\n': ANNOUNCEMENT_QUERY_RESULT;
+    '\n  *[_id == "siteSettings"][0].announcement { enabled, text, linkLabel, linkHref, extraMessages }\n': ANNOUNCEMENT_QUERY_RESULT;
+    '\n  *[_id == "siteSettings"][0].freeShippingThreshold\n': FREE_SHIPPING_QUERY_RESULT;
+    '\n  *[_id == "siteSettings"][0].heroSlides[defined(image.asset)] {\n    "id": _key,\n    media,\n    image,\n    mobileImage,\n    "videoUrl": video.asset->url,\n    alt,\n    heading,\n    subheading,\n    ctaLabel,\n    ctaHref,\n    tone,\n    duration\n  }\n': HERO_SLIDES_QUERY_RESULT;
+    '\n  *[_id == "siteSettings"][0] {\n    "perks": productPerks[] { icon, text },\n    sizeGuide { "rows": rows[] { size, height, weight }, note }\n  }\n': PRODUCT_PAGE_SETTINGS_QUERY_RESULT;
     '\n  *[_type == "testimonial"] | order(order asc) { _id, name, quote }\n': TESTIMONIALS_QUERY_RESULT;
     '\n  *[_type == "brand" && defined(logo.asset)] | order(order asc) {\n    _id,\n    name,\n    "slug": slug.current,\n    "src": logo.asset->url,\n    "width": logo.asset->metadata.dimensions.width,\n    "height": logo.asset->metadata.dimensions.height\n  }\n': BRANDS_QUERY_RESULT;
     '\n  *[_type == "brand" && slug.current == $slug][0].name\n': BRAND_NAME_QUERY_RESULT;

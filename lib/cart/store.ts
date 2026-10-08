@@ -3,6 +3,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import { normalizeSize } from "@/lib/catalog";
 import type { AppliedCoupon } from "@/lib/coupons/discount";
 
 export type CartLine = {
@@ -96,10 +97,14 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: "shopco-cart",
-      version: 2,
+      version: 3,
       // v1 carts stored USD prices; they are dropped rather than shown as VND.
-      migrate: (persisted, version) =>
-        (version < 2 ? { items: [], owner: null } : persisted) as Pick<CartState, "items" | "owner">,
+      // v2 carts used long size names (Small, X-Large…).
+      migrate: (persisted, version) => {
+        if (version < 2) return { items: [], owner: null } as Pick<CartState, "items" | "owner">;
+        const state = persisted as Pick<CartState, "items" | "owner">;
+        return { ...state, items: state.items.map((line) => ({ ...line, size: normalizeSize(line.size) })) };
+      },
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ items: state.items, owner: state.owner, coupon: state.coupon }),
       // Rehydrated after mount so server and first client render agree.

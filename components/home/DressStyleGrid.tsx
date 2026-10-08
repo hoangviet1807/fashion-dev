@@ -10,24 +10,31 @@ function StyleTile({
   image,
   href,
   className = "",
+  mirrored = false,
 }: {
   name: string;
   image: string;
   href: string;
   className?: string;
+  /** Flips a photo whose subject stands on the left, so the label doesn't cover the face. */
+  mirrored?: boolean;
 }) {
   return (
     <Link
       href={href}
       className={`group relative block overflow-hidden rounded-[20px] bg-white ${className}`}
     >
-      <Image
-        src={image}
-        alt={name}
-        fill
-        sizes="(max-width: 1280px) 100vw, 684px"
-        className="object-contain object-top transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100 lg:ml-[20%]"
-      />
+      <span className={`absolute inset-0 ${mirrored ? "-scale-x-100" : ""}`}>
+        <Image
+          src={image}
+          alt={name}
+          fill
+          sizes="(max-width: 1280px) 100vw, 684px"
+          className={`object-contain transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100 ${
+            mirrored ? "object-left-top" : "object-top lg:ml-[20%]"
+          }`}
+        />
+      </span>
       <span className="absolute top-4 left-6 text-[24px] font-bold xl:top-6 xl:left-9 xl:text-[36px]">
         {name}
       </span>
@@ -52,6 +59,7 @@ export function DressStyleGrid() {
                   name={style.name}
                   image={style.image}
                   href={style.href}
+                  mirrored={style.mirrored}
                   className="h-[190px]"
                 />
               </RevealItem>
@@ -63,6 +71,7 @@ export function DressStyleGrid() {
                 name={casual.name}
                 image={casual.image}
                 href={casual.href}
+                mirrored={casual.mirrored}
                 className="h-[190px] w-full md:w-1/2 xl:h-[289px] xl:w-[407px] xl:shrink-0"
               />
               <StyleTile

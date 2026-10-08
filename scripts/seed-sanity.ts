@@ -24,13 +24,6 @@ import {
 const client = getCliClient({ apiVersion: "2026-09-27" });
 const PUBLIC_DIR = join(process.cwd(), "public");
 
-const SIZE_CODES: Record<string, string> = {
-  Small: "S",
-  Medium: "M",
-  Large: "L",
-  "X-Large": "XL",
-};
-
 function stockFor(sku: string) {
   let hash = 0;
   for (const char of sku) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
@@ -124,7 +117,7 @@ async function main() {
     const imageIds = await Promise.all(product.images.map(uploadImage));
     const variants = product.colors.flatMap((color) =>
       VARIANT_SIZES.map((size) => {
-        const sku = `${product.slug}-${color}-${SIZE_CODES[size]}`.toUpperCase();
+        const sku = `${product.slug}-${color}-${size}`.toUpperCase();
         return { _key: sku, _type: "productVariant", sku, color, size, stock: stockFor(sku) };
       }),
     );

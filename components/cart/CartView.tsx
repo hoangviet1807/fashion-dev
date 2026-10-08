@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { EASE_OUT } from "@/components/motion/Reveal";
-import { cartSubtotal, cartTotal } from "@/lib/cart-data";
+import { cartSubtotal, cartTotal, deliveryFeeFor } from "@/lib/cart-data";
 import { useCartHydrated, useCartStore } from "@/lib/cart/store";
 import { couponDiscount } from "@/lib/coupons/discount";
 import { Container } from "@/components/layout/Container";
@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/Button";
 import { CartLineItem } from "@/components/cart/CartLineItem";
 import { OrderSummary } from "@/components/cart/OrderSummary";
 
-export function CartView() {
+export function CartView({ freeShippingFrom }: { freeShippingFrom: number | null }) {
   const hydrated = useCartHydrated();
   const items = useCartStore((state) => state.items);
   const updateQty = useCartStore((state) => state.updateQty);
@@ -21,10 +21,8 @@ export function CartView() {
 
   const subtotal = useMemo(() => cartSubtotal(items), [items]);
   const discount = useMemo(() => couponDiscount(coupon, subtotal), [coupon, subtotal]);
-  const total = useMemo(
-    () => cartTotal(subtotal, discount),
-    [subtotal, discount],
-  );
+  const deliveryFee = deliveryFeeFor("standard", subtotal, freeShippingFrom);
+  const total = cartTotal(subtotal, discount, deliveryFee);
 
   return (
     <div>
@@ -71,6 +69,8 @@ export function CartView() {
               subtotal={subtotal}
               discount={discount}
               total={total}
+              deliveryFee={deliveryFee}
+              freeShippingFrom={freeShippingFrom}
             />
           </div>
         )}

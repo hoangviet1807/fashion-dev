@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductDetailView } from "@/components/product/ProductDetailView";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { getProductPageSettings } from "@/lib/data/content";
 import {
   getAllProductSlugs,
   getProductBySlug,
@@ -33,6 +34,7 @@ export default async function ProductPage({
   if (!product) {
     notFound();
   }
+  const [related, settings] = await Promise.all([getRelated(product), getProductPageSettings()]);
 
   return (
     <>
@@ -45,7 +47,7 @@ export default async function ProductPage({
           { name: product.name },
         ])}
       />
-      <ProductDetailView product={product} related={await getRelated(product)} />
+      <ProductDetailView product={product} related={related} settings={settings} />
     </>
   );
 }

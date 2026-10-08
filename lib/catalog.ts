@@ -16,17 +16,24 @@ export const DRESS_STYLES: { id: DressStyleId; label: string }[] = [
   { id: "gym", label: "Thể thao" },
 ];
 
-export const SIZES = [
-  "XX-Small",
-  "X-Small",
-  "Small",
-  "Medium",
-  "Large",
-  "X-Large",
-  "XX-Large",
-  "3X-Large",
-  "4X-Large",
-] as const;
+export const SIZES = ["XXS", "XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"] as const;
+
+/** Size names used before the switch to short codes; old orders and links may still carry them. */
+export const LEGACY_SIZES: Record<string, (typeof SIZES)[number]> = {
+  "XX-Small": "XXS",
+  "X-Small": "XS",
+  Small: "S",
+  Medium: "M",
+  Large: "L",
+  "X-Large": "XL",
+  "XX-Large": "2XL",
+  "3X-Large": "3XL",
+  "4X-Large": "4XL",
+};
+
+export function normalizeSize(size: string) {
+  return LEGACY_SIZES[size] ?? size;
+}
 
 export type ColorSwatch = { id: string; hex: string; check: "white" | "black" };
 
@@ -85,7 +92,7 @@ export function colorLabel(id: string) {
 export const PRICE_BOUNDS = { min: 0, max: 250000, step: 10000 } as const;
 export const DEFAULT_PRICE: [number, number] = [50000, 200000];
 export const DEFAULT_COLOR = "black";
-export const DEFAULT_SIZE = "Medium";
+export const DEFAULT_SIZE = "M";
 
 export function isDressStyle(value: string | undefined): value is DressStyleId {
   return DRESS_STYLES.some((style) => style.id === value);

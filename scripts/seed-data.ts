@@ -68,7 +68,7 @@ export const PRODUCT_FAQS = [
   {
     question: "What sizes are available?",
     answer:
-      "We offer sizes from Small to X-Large on this product. Check the size selector above for current options.",
+      "We offer sizes from S to XL on this product. Check the size selector above for current options.",
   },
   {
     question: "How long does shipping take?",
@@ -111,7 +111,7 @@ export const DEFAULT_DETAILS = {
   ],
 };
 
-export const VARIANT_SIZES = ["Small", "Medium", "Large", "X-Large"];
+export const VARIANT_SIZES = ["S", "M", "L", "XL"];
 
 export type SeedProduct = {
   slug: string;

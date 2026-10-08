@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { auth } from "@/auth";
 import { getAccountUser, getDefaultAddress } from "@/lib/account/queries";
+import { getFreeShippingThreshold } from "@/lib/data/content";
 import { CheckoutView, type CheckoutDefaults } from "@/components/checkout/CheckoutView";
 
 export const metadata: Metadata = {
@@ -37,5 +38,15 @@ export default async function CheckoutPage({
   searchParams: Promise<{ payment?: string }>;
 }) {
   const { payment } = await searchParams;
-  return <CheckoutView paymentFailed={payment === "failed"} defaults={await accountDefaults()} />;
+  const [defaults, freeShippingFrom] = await Promise.all([
+    accountDefaults(),
+    getFreeShippingThreshold(),
+  ]);
+  return (
+    <CheckoutView
+      paymentFailed={payment === "failed"}
+      defaults={defaults}
+      freeShippingFrom={freeShippingFrom}
+    />
+  );
 }
